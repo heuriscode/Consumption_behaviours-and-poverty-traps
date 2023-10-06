@@ -1,0 +1,14 @@
+"Estimate","Standard Error","P-value"
+"Intercept",5.582,0.308,0
+"L1(Income)",-0.308,0.027,0
+"L1(Consumption)",0.049,0.019,0.009
+"L1(diff(Income))",0.245,0.017,0
+"L2(diff(Income))",0.132,0.011,0
+"Week index",-0.182,0.015,0
+"Week index ^ 2",0.006,0.001,0
+"L1(Parish average consumption)",0.138,0.064,0.032
+"",NA,NA,NA
+"R-squared",0.487,NA,NA
+"# households",421,NA,NA
+"Time periods used",21,NA,NA
+"Total # observations",8841,NA,NA

@@ -1,0 +1,8 @@
+"Dep. Var. = diff(Consumption)","Dep. Var. = diff(Unexpected Income)"
+"Lag(diff(Unexpected Income))","0.101*** (0.034)",NA
+"Lag(diff(Consumption))",NA,"0.017 (0.015)"
+"",NA,NA
+"R squared","0.871","0.82"
+"# households","421","421"
+"Time periods used","18","18"
+"Total # observations","7578","7578"

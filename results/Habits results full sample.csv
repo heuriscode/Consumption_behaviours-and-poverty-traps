@@ -1,0 +1,15 @@
+"CONSUMPTION","CONSUMPTION","DISCRETIONARY CONSUMPTION","DISCRETIONARY CONSUMPTION"
+"Lag(diff Consumption)","0","0.005","0.02**","0.013"
+"Std. Error","0.005","0.011","0.008","0.019"
+"Lag(diff Consumption) (+ve values)","-0.498***","-0.001","-0.565***","0.029"
+"Std. Error","0.02","0.02","0.018","0.019"
+"",NA,NA,NA,NA
+"Include controls for RoT?","No","No","Yes","Yes"
+"Include controls for 'Keeping Up'?","No","No","Yes","Yes"
+"",NA,NA,NA,NA
+"R-squared","0.26","0.61","0.26","0.58"
+"Number households","423","423","423","423"
+"Number time periods (used)","20","20","20","20"
+"Total used observations","8460","8460","8460","8460"
+"Baltagi-Wu LBI statistic","2.38","2.38","2.35","2.08"
+"Barghava et al Durbin Watson Statistic","2.26","2.26","2.22","1.96"
