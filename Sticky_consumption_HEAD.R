@@ -20,25 +20,42 @@ setwd(here())
 load(file="data\\data.Rda")
 load(file="data\\bg_data.Rda")
 
+#load libraries
+library(plm)         #mean group estimators for panel data
+
+#load scripts and programs
+source("utilities\\getDWforPGM.R")  #manual DW test for MG estimators
+source("utilities\\getFSTATforPGM.R")  #manual F-test for regression restrictions for MG estimators
+source("utilities\\getplmfitted.R")  #manual predicted and residuals series calculator for MG estimators as 'predict()' doesn't work for those.
+
+############################################
+#NOTES :
+############################################
+# clustering is not relevant for the MG family of estimators: heteroskedasticity in response is already accounted for
+#     directly in the estimation process itself (individual-level estimates that are averaged along with their respective
+#     standard errors)
+
+
+############################################
 #VAR NAMES IN DIARY DATA:
 #"SURVEY_ID"                   "WEEK_COUNT"
 #"PICKER_Y1"                   "DATE_FROM"
-#"DATE_TO"                     "WEEK"                       
-#"MONEY_EARNT_PICKING"         "MONEY_EARNT_COFF_SALES"     
-#"MONEY_EARNT_PARCHMENT"       "MONEY_EARNT_OTHER_WORK"     
-#"MONEY_EARNT_GOVT_NGO"        "MONEY_EARNT_PARTNER"        
-#"MONEY_EARNT_FRIEND"          "MONEY_EARNT_SAVINGS"        
-#"MONEY_EARNT_LOANS"           "GAMBLING"                   
-#"ASK_MONEY"                   "MONEY_FROM_ASK"             
-#"MONEY_WENT_PARTNER"          "AMOUNT_WENT_PARTNER"        
-#"MONEY_WENT_EXPENSES"         "MONEY_WENT_SAVINGS"         
-#"MONEY_WENT_STOLEN"           "MONEY_WENT_FRIENDS"         
+#"DATE_TO"                     "WEEK"
+#"MONEY_EARNT_PICKING"         "MONEY_EARNT_COFF_SALES"
+#"MONEY_EARNT_PARCHMENT"       "MONEY_EARNT_OTHER_WORK"
+#"MONEY_EARNT_GOVT_NGO"        "MONEY_EARNT_PARTNER"
+#"MONEY_EARNT_FRIEND"          "MONEY_EARNT_SAVINGS"
+#"MONEY_EARNT_LOANS"           "GAMBLING"
+#"ASK_MONEY"                   "MONEY_FROM_ASK"
+#"MONEY_WENT_PARTNER"          "AMOUNT_WENT_PARTNER"
+#"MONEY_WENT_EXPENSES"         "MONEY_WENT_SAVINGS"
+#"MONEY_WENT_STOLEN"           "MONEY_WENT_FRIENDS"
 #"MONEY_WENT_LOAN"             "EXPENSES_FOOD"
-#"EXPENSES_FARM_TOOLS"         "EXPENSES_FARM_INPUTS"       
-#"EXPENSES_HOME_CONSUMABLES"   "EXPENSES_EDUCATION"         
+#"EXPENSES_FARM_TOOLS"         "EXPENSES_FARM_INPUTS"
+#"EXPENSES_HOME_CONSUMABLES"   "EXPENSES_EDUCATION"
 #"EXPENSES_GAMBLING"           "EXPENSES_ALCOHOL_CIGARETTES"
-#"EXPENSES_HOUSELOAN_RENT"     "EXPENSES_OTHER_LOAN"        
-#"EXPENSES_TRANSPORT"          "EXPENSES_OTHER"   
+#"EXPENSES_HOUSELOAN_RENT"     "EXPENSES_OTHER_LOAN"
+#"EXPENSES_TRANSPORT"          "EXPENSES_OTHER"
 
 #first remove households which have less than the full 6 rounds of data = 24 weeks
 #
@@ -54,13 +71,13 @@ for(i in 1:length(IDvec1)){
   if(!exists("data1")){
     if(nweeks[i]==24){
       data1=subdat
-      }
-    } else {
-      if(nweeks[i]==24){
-        data1=data.frame(rbind(data1,subdat))
-      }
+    }
+  } else {
+    if(nweeks[i]==24){
+      data1=data.frame(rbind(data1,subdat))
     }
   }
+}
 sum(nweeks!=24) #7 households in this data set (<1.5%)
 
 #check:
@@ -68,7 +85,7 @@ nweeks=c()
 IDvec2=levels(droplevels(as.factor(data1$SURVEY_ID)))
 for(i in 1:length(IDvec2)){
   nweeks[i]=nrow(data1[data1$SURVEY_ID==IDvec2[i],])
-  }
+}
 sum(nweeks!=24) #must be zero
 #if zero:
 data=data1
@@ -89,7 +106,7 @@ for(i in 1:nrow(bg_data)){
   if(bg_data$ID[i] %in% IDdiary){next}
   negvec[ind]=-rowseq[i]
   ind=ind+1
-  }
+}
 
 bg_data=bg_data[negvec,]
 #nrows in bgdata1 = 442 - fully matching diary data now.
@@ -114,16 +131,16 @@ data$MONEY_WENT_LOAN[data$MONEY_WENT_LOAN>800000]=800000  #2 obs censored.
 data$MONEY_EARNT_PARCHMENT[is.na(data$MONEY_EARNT_PARCHMENT)]=0  #replace 2 NA observations with zero
 
 CONSUMPTION = data$MONEY_WENT_FRIENDS +
-              data$MONEY_WENT_PARTNER +
-              data$EXPENSES_FOOD +
-              data$EXPENSES_FARM_TOOLS +
-              data$EXPENSES_FARM_INPUTS +
-              data$EXPENSES_EDUCATION +
-              data$EXPENSES_HOME_CONSUMABLES +
-              data$EXPENSES_GAMBLING +
-              data$EXPENSES_ALCOHOL_CIGARETTES +
-              data$EXPENSES_TRANSPORT +
-              data$EXPENSES_OTHER
+  data$MONEY_WENT_PARTNER +
+  data$EXPENSES_FOOD +
+  data$EXPENSES_FARM_TOOLS +
+  data$EXPENSES_FARM_INPUTS +
+  data$EXPENSES_EDUCATION +
+  data$EXPENSES_HOME_CONSUMABLES +
+  data$EXPENSES_GAMBLING +
+  data$EXPENSES_ALCOHOL_CIGARETTES +
+  data$EXPENSES_TRANSPORT +
+  data$EXPENSES_OTHER
 
 ##############################################
 #check for too many zeros in consumption data:
@@ -131,7 +148,7 @@ CONSUMPTION = data$MONEY_WENT_FRIENDS +
 zeros=c()
 for(i in 1:length(IDvec2)){
   zeros[i]=sum(CONSUMPTION[data$SURVEY_ID==IDvec2[i]]==0)
-  }
+}
 
 #get IDs from the 2 households with 4 weeks or more missing income and consumption data:
 missingobs=IDvec2[zeros>=4]
@@ -157,17 +174,17 @@ subcounty=data.frame("SUBCOUNTY_NAME"=levels(bg_data$SUBCOUNTY),"HH_COUNT_SUBCOU
 for(vvv in 1:nrow(vils)){
   ids_in_vils=bg_data$ID[bg_data$VILLAGE==vils[vvv,1]]
   vils[vvv,2]=length(ids_in_vils)
-  }
+}
 
 for(ppp in 1:nrow(parish)){
   ids_in_parish=bg_data$ID[bg_data$PARISH==parish[ppp,1]]
   parish[ppp,2]=length(ids_in_parish)
-  }
+}
 
 for(sss in 1:nrow(subcounty)){
   ids_in_subcounty=bg_data$ID[bg_data$SUBCOUNTY==subcounty[sss,1]]
   subcounty[sss,2]=length(ids_in_subcounty)
-  }
+}
 
 #38 villages have 2 or less households...
 #only 12 parishes have 2 or less households - choose to use parish as the aggregation zone.
@@ -187,47 +204,71 @@ bg_data$SUBCOUNTY=as.factor(droplevels(bg_data$SUBCOUNTY))       #RESET  LEVELS
 #create main analysis variables:
 ##################################
 INCOME = data$MONEY_EARNT_PICKING + data$MONEY_EARNT_COFF_SALES + data$MONEY_EARNT_PARCHMENT + data$MONEY_EARNT_OTHER_WORK +
-         data$MONEY_EARNT_GOVT_NGO + data$MONEY_EARNT_PARTNER + replace(data$GAMBLING,is.na(data$GAMBLING),0)
+  data$MONEY_EARNT_GOVT_NGO + replace(data$GAMBLING,is.na(data$GAMBLING),0)
 
-CONSUMPTION =data$MONEY_WENT_FRIENDS +
-              data$MONEY_WENT_PARTNER +
-              data$EXPENSES_FOOD +
-              data$EXPENSES_FARM_TOOLS +
-              data$EXPENSES_FARM_INPUTS +
-              data$EXPENSES_EDUCATION +
-              data$EXPENSES_HOME_CONSUMABLES +
-              data$EXPENSES_GAMBLING +
-              data$EXPENSES_ALCOHOL_CIGARETTES +
-              data$EXPENSES_TRANSPORT +
-              data$EXPENSES_OTHER
+CONSUMPTION = data$EXPENSES_FOOD +
+  data$EXPENSES_FARM_TOOLS +
+  data$EXPENSES_FARM_INPUTS +
+  data$EXPENSES_EDUCATION +
+  data$EXPENSES_HOME_CONSUMABLES +
+  data$MONEY_WENT_FRIENDS +
+  data$EXPENSES_GAMBLING +
+  data$EXPENSES_ALCOHOL_CIGARETTES +
+  data$EXPENSES_TRANSPORT +
+  data$EXPENSES_OTHER
 
 DISC_CONS = data$MONEY_WENT_FRIENDS +
-            data$EXPENSES_ALCOHOL_CIGARETTES +
-            data$EXPENSES_TRANSPORT +
-            data$EXPENSES_GAMBLING  +
-            data$EXPENSES_OTHER
+  data$EXPENSES_ALCOHOL_CIGARETTES +
+  data$EXPENSES_TRANSPORT +
+  data$EXPENSES_GAMBLING  +
+  data$EXPENSES_OTHER
 
 ###############################################################################
 #  Use natural logarithm with a small addition (~0.35 AUD) for zero obs:
 #       zero obs account for very small proportion of all obs ~1.8% of consumption and income.
 #       they account for more of nondurable (~7%) and durable (~20%) consumption though as expected
+
+#  Check with natural log and run some correlations and test regressions.
 ###############################################################################
 NET_SAVINGS=data$MONEY_WENT_SAVINGS - data$MONEY_EARNT_SAVINGS
 SAV_RATE=NET_SAVINGS/INCOME
-INCOME=log((INCOME+1000)/1000)
-CONSUMPTION=log((CONSUMPTION+1000)/1000)
-DISC_CONS=log((DISC_CONS+1000)/1000)
+LN_INCOME=log((INCOME+1000)/1000)
+LN_CONSUMPTION=log((CONSUMPTION+1000)/1000)
+LN_DISC_CONS=log((DISC_CONS+1000)/1000)
+
+#use inverse hyperbolic sin to allow non-negative values and approximate a log.
+invhypsin=function(x){
+  out=log(x+(x^2+1)^(1/2))
+  return(out)}
+
+INC_IHS = invhypsin(INCOME/1000)
+CONS_IHS = invhypsin(CONSUMPTION/1000)
+DISC_IHS = invhypsin(DISC_CONS/1000)
+
+cor(LN_INCOME,INC_IHS)  #0.998
+cor(LN_CONSUMPTION,CONS_IHS)  #0.998
+cor(LN_DISC_CONS,DISC_IHS)  #0.998
+
+#set main vars to the IHS version for 2022 review version
+INCOME = INC_IHS
+CONSUMPTION = CONS_IHS
+DISC_CONS = DISC_IHS
+DISC_TO_TOT_CONS_RAT = DISC_CONS/CONSUMPTION
+DISC_TO_TOT_CONS_RAT = replace(DISC_TO_TOT_CONS_RAT,CONSUMPTION==0,1)
 
 #CALCULATE PARISH-LEVEL AVERAGES AND VARIANCE
-PARISH_CONS=PARISH_INC=VAR_PARISH_CONS=VAR_PARISH_INC=DIFF_PARISH_CONS=DIFF_PARISH_INC=PARISH_DISC=DIFF_PARISH_DISC=c()
+PARISH=PARISH_CONS=PARISH_INC=VAR_PARISH_CONS=VAR_PARISH_INC=DIFF_PARISH_CONS=DIFF_PARISH_INC=PARISH_DISC=DIFF_PARISH_DISC=c()
 for(i in 1:nrow(data)){
-  #get other IDs from Village
+  #First get parish vector to add to data allowing clustered standard errors
+  PARISH[i] = bg_data$PARISH[bg_data$ID==data$SURVEY_ID[i]]
+  
+  #get other IDs from Parish
   parish=bg_data$PARISH[bg_data$ID==data$SURVEY_ID[i]]
   parish_vec=bg_data$ID[which(bg_data$PARISH %in% parish)]
   parish_vec=parish_vec[parish_vec != data$SURVEY_ID[i]]
   #get week number
   weeknum=data$WEEK[i]
-
+  
   #get CONSUMPTION for village:
   CONS_PARISH=CONSUMPTION[which(data$SURVEY_ID %in% parish_vec & data$WEEK %in% weeknum)]
   INC_PARISH=INCOME[which(data$SURVEY_ID %in% parish_vec & data$WEEK %in% weeknum)]
@@ -238,11 +279,11 @@ for(i in 1:nrow(data)){
   VAR_PARISH_CONS[i]=var(CONS_PARISH)
   VAR_PARISH_INC[i]=var(INC_PARISH)
   PARISH_DISC[i]=mean(DISC_PARISH)
-
+  
   DIFF_PARISH_DISC[i]=PARISH_DISC[i]-DISC_CONS[i]
   DIFF_PARISH_CONS[i]=PARISH_CONS[i]-CONSUMPTION[i]
   DIFF_PARISH_INC[i]=PARISH_INC[i]-INCOME[i]
-  }
+}
 
 
 IDvec=levels(as.factor(data$SURVEY_ID))
@@ -254,20 +295,20 @@ for(i in 1:length(IDvec)){
   TOTINC[i]=sum(INCOME[data$SURVEY_ID==IDvec[i]],na.rm=TRUE)
   TOTDISC_CONS[i]=sum(DISC_CONS[data$SURVEY_ID==IDvec[i]],na.rm=TRUE)
   TOTSAV[i]=sum(NET_SAVINGS[data$SURVEY_ID==IDvec[i]],na.rm=TRUE)
-  }
+}
 
 
 #get a summary of the data first:
 data_summary_mat=rbind(c(quantile(exp(INCOME),probs=c(0,0.25,0.5,0.75,1),na.rm=TRUE),
-                       mean(exp(INCOME)),
-                       sqrt(var(exp(INCOME)))),
+                         mean(exp(INCOME)),
+                         sqrt(var(exp(INCOME)))),
                        c(quantile(exp(CONSUMPTION),probs=c(0,0.25,0.5,0.75,1),na.rm=TRUE),
-                       mean(exp(CONSUMPTION)),
-                       sqrt(var(exp(CONSUMPTION)))),
+                         mean(exp(CONSUMPTION)),
+                         sqrt(var(exp(CONSUMPTION)))),
                        c(quantile(exp(DISC_CONS),probs=c(0,0.25,0.5,0.75,1),na.rm=TRUE),
-                       mean(exp(DISC_CONS)),
-                       sqrt(var(exp(DISC_CONS))))
-                       )
+                         mean(exp(DISC_CONS)),
+                         sqrt(var(exp(DISC_CONS))))
+)
 #data_summary_mat[,1]=0 #replace 100 shillings for logarithm with 0
 colnames(data_summary_mat)=c("Minimum","25th percentile","Median","75th percentile","Maximum","Mean","Std. Deviation")
 rownames(data_summary_mat)=c("INCOME","CONSUMPTION TOTAL","DISCRETIONARY CONSUMPTION")
@@ -278,30 +319,33 @@ WEEKS=max(data$WEEK)
 ################################
 #CREATE PANEL DATA FRAME
 ####################################
-library(plm)
-dat=data.frame(data$SURVEY_ID,data$WEEK,
-               INCOME,CONSUMPTION,DISC_CONS,
+
+dat=data.frame(data$SURVEY_ID,PARISH,data$WEEK,
+               INCOME,CONSUMPTION,DISC_CONS,DISC_TO_TOT_CONS_RAT,
                PARISH_CONS,PARISH_INC,PARISH_DISC,
                DIFF_PARISH_CONS,DIFF_PARISH_INC,DIFF_PARISH_DISC,
                VAR_PARISH_CONS,VAR_PARISH_INC)
-names(dat)=c("ID","WEEK",
-             "INC","CONS","DISC",
+names(dat)=c("ID","PARISH","WEEK",
+             "INC","CONS","DISC","DISC_TO_TOT_CONS_RAT",
              "PARISH_CONS","PARISH_INC","PARISH_DISC",
              "DIFF_PARISH_CONS","DIFF_PARISH_INC","DIFF_PARISH_DISC",
              "VAR_PARISH_CONS","VAR_PARISH_INC")
 
 pdat=pdata.frame(dat,index=c("ID","WEEK"))
 
-INCPOS=replace(diff(pdat$INC),diff(pdat$INC)<0,0)
-CONSPOS=replace(diff(pdat$CONS),diff(pdat$CONS)<0,0)
-DISCPOS=replace(diff(pdat$DISC),diff(pdat$DISC)<0,0)
+INCPOS=replace(pdat$INC,pdat$INC<0,0)
+CONSPOS=replace(pdat$CONS,pdat$CONS<0,0)
+DISCPOS=replace(pdat$DISC,pdat$DISC<0,0)
+dINCPOS=replace(diff(pdat$INC),diff(pdat$INC)<0,0)
+dCONSPOS=replace(diff(pdat$CONS),diff(pdat$CONS)<0,0)
+dDISCPOS=replace(diff(pdat$DISC),diff(pdat$DISC)<0,0)
 PARISH_CONS_POS=replace(diff(pdat$PARISH_CONS),diff(pdat$PARISH_CONS)<0,0)
 PARISH_DISC_POS=replace(diff(pdat$PARISH_DISC),diff(pdat$PARISH_DISC)<0,0)
 PARISH_INC_POS=replace(diff(pdat$PARISH_INC),diff(pdat$PARISH_INC)<0,0)
 DIFF_PARISH_CONS_POS=replace(pdat$DIFF_PARISH_CONS,pdat$DIFF_PARISH_CONS<0,0)
 DIFF_PARISH_DISC_POS=replace(diff(pdat$DIFF_PARISH_DISC),diff(pdat$DIFF_PARISH_DISC)<0,0)
 
-dat=data.frame(dat,INCPOS,CONSPOS,DISCPOS,
+dat=data.frame(dat,INCPOS,CONSPOS,DISCPOS,dINCPOS,dCONSPOS,dDISCPOS,
                PARISH_CONS_POS,PARISH_DISC_POS,PARISH_INC_POS,DIFF_PARISH_CONS_POS,DIFF_PARISH_DISC_POS)
 pdat=pdata.frame(dat,index=c("ID","WEEK"))
 
@@ -309,48 +353,86 @@ pdat=pdata.frame(dat,index=c("ID","WEEK"))
 #############################################################
 #  GET EXPECTED INCOME BASED ON EXOGENOUS VARIABLES
 #############################################################
-eq_exp_inc=INC~lag(INC,1)+lag(CONS,1)+lag(diff(INC),1:2)+as.numeric(WEEK)+I(as.numeric(WEEK)^2)+lag(PARISH_CONS)
+eq_exp_inc=INC~lag(INC,1:2)+lag(CONS,1:2)+lag(DISC_TO_TOT_CONS_RAT,1)+lag(PARISH_INC,1:2)+lag(PARISH_CONS,1:2)
 #diff(INC) lags are known to the household and have been experienced so are exogenous and known
 #mean parish income (not including the household) is exogenous and is relatively easily observed by most households
-#time effects are predictable and show a simple quadratic pattern
+#the DISC_TO_TOT_CONS_RAT term is a ratio of discretionary consumption to total consumption (lagged) - an indicator of their previous consumption patterns/preferences
 
 #use the mg, NOT the ccemg model as common correlated effects are unknown to households before occurence
 predinc_reg=pmg(eq_exp_inc,data=pdat,model="mg")
-#multiple r-squared = 0.49
+#multiple r-squared = 0.46
 
+### Note:
+#  predict function for MG type models uses *individual* level models and associated predictions
+#  so heterogeneity in expectations is also accounted for using these models
+#  it is better to allow for some DF losses as this allows for some HH to have great 'rationality' over others (e.g. include some variables that are, on average, insignificant)
+#  this also implies that the use of a trend term is only appropriate if income is smooth - otherwise it will over-smooth predicted income. Thus, leave out as will be driven by outliers
+#      such as random higher consumption at the start, middle, or end of the sample period would generate decreasing, inverted-U, or increasing expected income predictions.
+
+### lagged consumption (both), lagged ratio of disc to total cons (both) and lagged parish consumption (second lag) are all insignificant but evidence that they improve the model
+# joint f-test:
+#   with no lagged PARISH_CON:  F-stat ~ 1.3
+#   OR no DISC_TO_CONS_RAT:  F-stat ~ 1.3
+# so can't reject restrictions individually but not a strong rejection
+# 28% of households involved a strong rejection of these restrictions (<5% p-value)
+# so good evidence that, for some households, there is a stronger predictability for household income.
+
+#F-test
+#Fstat = getFSTATforPGM(predinc_reg_RESTRICT,predinc_reg,pdat)
+
+
+#DW-test - provides vector by household, take mean to get mean DW test result
+DWstat = round(pbnftest(predinc_reg)$statistic,2)
+BNF=round(pbnftest(predinc_reg,test="bnf")$statistic,2)
+LBI=round(pbnftest(predinc_reg,test="lbi")$statistic,2)
+
+
+#generate results matrix
 len=length(predinc_reg$coef)
-predinc_mat=matrix(NA,nrow=(5+len),ncol=3)
+predinc_mat=matrix(NA,nrow=(8+len),ncol=3)
 predinc_mat[1:len,]=round(summary(predinc_reg)$Coef[,-3],3)
 
-predinc_mat[(len+2):(len+5),1]=c(0.487,421,21,8841)
+#manually enter values for R2, #hh, #time, #total, and DWtest because I'm feeling brain-lazy for thinking how to code this.
+predinc_mat[(len+2):(len+8),1]=c(0.54,423,22,9306,DWstat,BNF,LBI)
 
-rownames(predinc_mat)=c("Intercept","L1(Income)","L1(Consumption)",
-                        "L1(diff(Income))","L2(diff(Income))",
-                        #"Lag(Parish mean income)",
-                        "Week index","Week index ^ 2","L1(Parish average consumption)","",
-                        "R-squared","# households","Time periods used","Total # observations")
+
+### CHECK AND REDO FOR THE FINAL REGRESSSION ###
+rownames(predinc_mat)=c("Intercept","L1(Income)","L2(Income)",
+                        "L1(Consumption)","L2(Consumption)",
+                        "L1 Own Discretionary/Total Consumption Ratio",
+                        "L1(Parish mean income)","L2(Parish mean income)",
+                        "L1(Parish mean consumption)","L2(Parish mean consumption)",
+                        "",
+                        "R-squared","# households","Time periods used","Total # observations",
+                        "DW statistic","Barghava et al Durbin Watson Statistic","Baltagi-Wu LBI statistic")
 
 colnames(predinc_mat)=c("Estimate","Standard Error","P-value")
 
 write.table(predinc_mat,"results\\predicted income regression.csv",sep=",")
+
 #get fitted values and residuals
-source("utilities\\getplmfitted.R")   #use this because the plm functionality is hopeless in this regard
 fittedlist=getplmfitted(predinc_reg,pdat)
 EXPECT_INC=fittedlist[[1]]  #this represents the predictable portion of income
 RESID_INC=fittedlist[[2]]   #this represents the unexpected portion of income CALCULATED AS OBSERVED MINUS EXPECTED!!!
 
 #get differences for the pos components manually due to plm limitations
-POS_EXPINC=POS_UNEXPINC=rep(NA,nrow(dat))
+dPOS_EXPINC=dPOS_UNEXPINC=rep(NA,nrow(dat))
 for(i in 1:nrow(dat)){
   if(i==1){next}
   if(dat$ID[i]!=dat$ID[(i-1)]){next}
   expdiff=EXPECT_INC[i]-EXPECT_INC[(i-1)]
   unexpdiff=RESID_INC[i]-RESID_INC[(i-1)]
-  POS_EXPINC[i]=replace(expdiff,expdiff<0,0)
-  POS_UNEXPINC[i]=replace(unexpdiff,unexpdiff<0,0)
-  }
+  dPOS_EXPINC[i]=replace(expdiff,expdiff<0,0)
+  dPOS_UNEXPINC[i]=replace(unexpdiff,unexpdiff<0,0)
+}
 
-pdat=pdata.frame(data.frame(pdat,"EXPECTED_INC"=EXPECT_INC,"UNEXPECTED_INC"=RESID_INC,"POS_EXPINC"=POS_EXPINC,"POS_UNEXPINC"=POS_UNEXPINC),index=c("ID","WEEK"))
+POS_EXPINC=replace(EXPECT_INC,EXPECT_INC<0,0)
+POS_UNEXPINC=replace(RESID_INC,RESID_INC<0,0)
+NEG_EXPINC=replace(EXPECT_INC,EXPECT_INC>0,0)
+NEG_UNEXPINC=replace(RESID_INC,RESID_INC>0,0)
+dCONS = diff(pdat$CONS)
+
+pdat=pdata.frame(data.frame(pdat,"EXPECTED_INC"=EXPECT_INC,"UNEXPECTED_INC"=RESID_INC,"POS_EXPINC"=NEG_EXPINC,"POS_UNEXPINC"=NEG_UNEXPINC,"POS_EXPINC"=POS_EXPINC,"POS_UNEXPINC"=POS_UNEXPINC,"dPOS_EXPINC"=dPOS_EXPINC,"dPOS_UNEXPINC"=dPOS_UNEXPINC,"dCONS"=dCONS),index=c("ID","WEEK"))
 
 ###################################
 #  HISTOGRAMS FOR CONSUMPTION/INCOME
@@ -362,7 +444,7 @@ for(i in 1:length(IDvec)){
   subdat=pdat[pdat$ID==IDvec[i],]
   HH_TOT_CONS[i]=sum(subdat$CONS)
   HH_TOT_INC[i]=sum(subdat$INC)
-  }
+}
 
 TOT_CONS=c()
 TOT_INC=c()
@@ -370,93 +452,95 @@ for(www in 1:24){
   subdat=pdat[pdat$WEEK==www,]
   TOT_CONS[www]=sum(subdat$CONS)
   TOT_INC[www]=sum(subdat$INC)
-  }
+}
 
 incrat_hh=HH_TOT_CONS/HH_TOT_INC
 incrat_all=TOT_CONS/TOT_INC
 par(mfrow=c(1,2))
 hist(incrat_hh,main="Household-level total consumption/income",xlab="Consumption/Income ratio")
-hist(incrat_all,main="Sample-level weekly consumption/income",xlab="Consumption/Income ratio",breaks=seq(0.89,1.15,0.025))
+hist(incrat_all,main="Sample-level weekly consumption/income",xlab="Consumption/Income ratio",breaks=seq(0.85,1.15,0.05))
 
 
 ###################################
 #  PERSISTENCE IN INCOME
 ###################################
 
-reg_persistenceINC=pmg(diff(INC)~lag(diff(INC),1:3)+lead(diff(INC),1),data=pdat,model="mg")
-reg_persistenceUNEXPINC=pmg(diff(UNEXPECTED_INC)~lag(diff(UNEXPECTED_INC),1:3)+lead(diff(UNEXPECTED_INC),1),data=pdat,model="mg")
-reg_persistenceEXPINC=pmg(diff(EXPECTED_INC)~lag(diff(EXPECTED_INC),1:3)+lead(diff(EXPECTED_INC),1),data=pdat,model="mg")
+reg_persistenceINC=pmg(diff(INC)~lag(diff(INC),1:3)+lead(diff(INC),1),data=pdat,model="mg",trend=TRUE)
+reg_persistenceUNEXPINC=pmg(diff(UNEXPECTED_INC)~lag(diff(UNEXPECTED_INC),1:3)+lead(diff(UNEXPECTED_INC),1),data=pdat,model="mg",trend=TRUE)
+reg_persistenceEXPINC=pmg(diff(EXPECTED_INC)~lag(diff(EXPECTED_INC),1:3)+lead(diff(EXPECTED_INC),1),data=pdat,model="mg",trend=TRUE)
 
-persist_mat=matrix(NA,nrow=(5+1+4),ncol=3)
-rownames(persist_mat)=c("Intercept","L1(dep. var.)","L2(dep. var.)","L3(dep. var.)","P1(dep. var.)","","R-squared","# households","Time periods used","Total # observations")
+persist_mat=matrix(NA,nrow=(5+1+7),ncol=3)
+rownames(persist_mat)=c("Intercept","L1(dep. var.)","L2(dep. var.)","L3(dep. var.)","P1(dep. var.)","","R-squared","# households","Time periods used","Total # observations",
+                        "DW statistic","Barghava et al Durbin Watson Statistic","Baltagi-Wu LBI statistic")
 colnames(persist_mat)=c("Income","Expected Income","Unexpected Income")
 
+DWstat_I=round(pbnftest(reg_persistenceINC)$statistic,2)
+BNF_I=round(pbnftest(reg_persistenceINC,test="bnf")$statistic,2)
+LBI_I=round(pbnftest(reg_persistenceINC,test="lbi")$statistic,2)
+
+DWstat_E = round(pbnftest(reg_persistenceEXPINC)$statistic,2)
+BNF_E=round(pbnftest(reg_persistenceEXPINC,test="bnf")$statistic,2)
+LBI_E=round(pbnftest(reg_persistenceEXPINC,test="lbi")$statistic,2)
+
+DWstat_U = round(pbnftest(reg_persistenceUNEXPINC)$statistic,2)
+BNF_U=round(pbnftest(reg_persistenceUNEXPINC,test="bnf")$statistic,2)
+LBI_U=round(pbnftest(reg_persistenceUNEXPINC,test="lbi")$statistic,2)
+
+
 modlist=list(reg_persistenceINC,reg_persistenceEXPINC,reg_persistenceUNEXPINC)
-modelstatmat=cbind(c(0.535,421,19,6004),
-                   c(0.538,421,16,5056),
-                   c(0.629,421,16,5056))
+modelstatmat=cbind(c(0.58,423,19,8037,DWstat_I,BNF_I,LBI_I),
+                   c(0.59,423,17,7191,DWstat_E,BNF_E,LBI_E),
+                   c(0.66,423,17,7191,DWstat_U,BNF_U,LBI_U))
 for(rrr in 1:5){
   for(ccc in 1:length(modlist)){
     mod=summary(modlist[[ccc]])$Coef
     stars_=ifelse(mod[3,4]>0.1,"",ifelse(mod[3,4]>0.05,"*",ifelse(mod[3,4]>0.1,"**","***")))
     persist_mat[rrr,ccc]=paste(round(mod[rrr,1],3),stars_," (",round(mod[rrr,2],3),")",sep="")
-    }
   }
+}
 
-persist_mat[7:10,1]=modelstatmat[,1]
-persist_mat[7:10,2]=modelstatmat[,2]
-persist_mat[7:10,3]=modelstatmat[,3]
+persist_mat[7:13,1]=modelstatmat[,1]
+persist_mat[7:13,2]=modelstatmat[,2]
+persist_mat[7:13,3]=modelstatmat[,3]
 
 write.table(persist_mat,"results\\income persistence results.csv",sep=",")
 
 ################################
 #CAUSALITY CHECK:
 ################################
-reg_causalityCU=pmg(diff(CONS)~lag(diff(UNEXPECTED_INC),0:1)+
-                               lead(diff(EXPECTED_INC),1)+
-                               lag(diff(EXPECTED_INC),0:1)+
-                               diff(PARISH_INC)+
-                               lag(diff(CONS),1:2)+
-                               lead(diff(CONS),1),
-                               data=pdat,model="mg")
 
-#R-squared = 0.87076
-#n=421
-#N=7578
-#T=18 (due to leads and lags)
+reg_causalityUC=pmg(diff(UNEXPECTED_INC)~lag(diff(CONS),1)+
+                      lag(diff(EXPECTED_INC),1)+
+                      lag(diff(UNEXPECTED_INC),1)+
+                      lag(diff(PARISH_INC),1),
+                    data=pdat,model="cmg")
 
-reg_causalityUC=pmg(diff(UNEXPECTED_INC)~lag(diff(CONS),0:1)+
-                                         lead(diff(EXPECTED_INC),1)+
-                                         lag(diff(EXPECTED_INC),0:1)+
-                                         lag(diff(UNEXPECTED_INC),1:2)+
-                                         lead(diff(UNEXPECTED_INC),1)+
-                                         diff(PARISH_INC),
-                                         data=pdat,model="mg")
-
-#R-squared = 0.857
+#R-squared = 0.53
 #n=423
-#N=7191
-#T=17 (due to leads and lags)
-
-coefmatCU=summary(reg_causalityCU)$Coef
+#N=8460
+#T=20
+DWstat = round(pbnftest(reg_causalityUC)$statistic,2)
+BNF=round(pbnftest(reg_causalityUC,test="bnf")$statistic,2)
+LBI=round(pbnftest(reg_causalityUC,test="lbi")$statistic,2)
 coefmatUC=summary(reg_causalityUC)$Coef
-caus_mat=matrix(NA,nrow=(3+4),ncol=2)
+caus_mat=matrix(NA,nrow=(5+8),ncol=2)
 
 #coefficient of interest is third in each regression (the lag of the cons/unexpected income)
 
-#CU
-stars_=ifelse(coefmatCU[3,4]>0.1,"",ifelse(coefmatCU[3,4]>0.05,"*",ifelse(coefmatCU[3,4]>0.1,"**","***")))
-caus_mat[1,1]=paste(round(coefmatCU[3,1],3),stars_," (",round(coefmatCU[3,2],3),")",sep="")
-
 #UC
-stars_=ifelse(coefmatUC[3,4]>0.1,"",ifelse(coefmatUC[3,4]>0.05,"*",ifelse(coefmatUC[3,4]>0.1,"**","***")))
-caus_mat[2,2]=paste(round(coefmatUC[3,1],3),stars_," (",round(coefmatUC[3,2],3),")",sep="")
+for(i in 1:5){
+  stars_=ifelse(coefmatUC[i,4]>0.1,"",ifelse(coefmatUC[i,4]>0.05,"*",ifelse(coefmatUC[i,4]>0.1,"**","***")))
+  est = paste(round(coefmatUC[i,1],2),stars_,sep="")
+  stderr = paste("(",round(coefmatUC[i,2],2),")",sep="")
+  caus_mat[i,]=c(est,stderr)
+}
 
-caus_mat[4:7,1]=c(0.871,421,18,7578)
-caus_mat[4:7,2]=c(0.820,421,18,7578)
+caus_mat[-1:-6,1]=c(0.5,421,20,8460,DWstat,BNF,LBI)
 
-rownames(caus_mat)=c("Lag(diff(Unexpected Income))","Lag(diff(Consumption))","","R squared","# households","Time periods used","Total # observations")
-colnames(caus_mat)=c("Dep. Var. = diff(Consumption)","Dep. Var. = diff(Unexpected Income)")
+rownames(caus_mat)=c("Intercept","Lag(diff(Consumption))","Lag(diff(Expected Income))","Lag(diff(Unexpected Income))","Lag(diff(Mean Parish Income))",
+                     "","R squared","# households","Time periods used","Total # observations",
+                     "DW-statistic","Baltagi-Wu LBI statistic","Barghava et al Durbin Watson Statistic")
+colnames(caus_mat)=c("Estimate","Standard Error")
 
 write.table(caus_mat,"results\\causality results.csv",sep=",")
 
@@ -464,50 +548,53 @@ write.table(caus_mat,"results\\causality results.csv",sep=",")
 # MAIN regressions TOTAL CONSUMPTION
 ##################################################
 
+#### FIRST CREATE MEANS OF MAIN VARIABLES AND DVs TO DO A MANUAL CMG MODEL - THIS ALLOWS ME TO INCLUDE LAGS AND LEADS OF THE KEY INDEPENDENT VARIABLES  ####
+
+#diff(CONS), diff(EXPECTED_INC), diff(UNEXPECTED_INC), lag(diff(CONS),1), lag(diff(DISC),1), lag(DIFF_PARISH_CONS,1)
 #ROT:
 #PIH predicts consumption = expected income
 #PIH predicts saving of a large portion of unexpected income (spreading across time)
 #So H0 is that the unexpected income coefficients are = 0.
 #If positive then significant ROT effects.
-eq_rot_asym_CONS=diff(CONS)~0+diff(EXPECTED_INC)+POS_EXPINC+diff(UNEXPECTED_INC)+POS_UNEXPINC
-eq_rot_habit_jones_asym_CONS=diff(CONS)~0+diff(EXPECTED_INC)+POS_EXPINC+diff(UNEXPECTED_INC)+POS_UNEXPINC+lag(DIFF_PARISH_CONS)+lag(diff(CONS),1)
-eq_rot_asym_DISC_CONS=diff(DISC)~0+diff(EXPECTED_INC)+POS_EXPINC+diff(UNEXPECTED_INC)+POS_UNEXPINC
-eq_rot_habit_jones_asym_DISC_CONS=diff(DISC)~0+diff(EXPECTED_INC)+POS_EXPINC+diff(UNEXPECTED_INC)+POS_UNEXPINC+lag(DIFF_PARISH_DISC)+lag(diff(DISC),1)
+eq_rot_asym_CONS=diff(CONS)~0+diff(EXPECTED_INC)+dPOS_EXPINC+diff(UNEXPECTED_INC)+dPOS_UNEXPINC + lag(diff(EXPECTED_INC)) + lead(diff(EXPECTED_INC))
+eq_rot_habit_jones_asym_CONS=diff(CONS)~0+diff(EXPECTED_INC)+dPOS_EXPINC+diff(UNEXPECTED_INC)+dPOS_UNEXPINC+lag(DIFF_PARISH_CONS)+lag(diff(CONS),1)
+eq_rot_asym_DISC_CONS=diff(DISC)~0+diff(EXPECTED_INC)+dPOS_EXPINC+diff(UNEXPECTED_INC)+dPOS_UNEXPINC
+eq_rot_habit_jones_asym_DISC_CONS=diff(DISC)~0+diff(EXPECTED_INC)+dPOS_EXPINC+diff(UNEXPECTED_INC)+dPOS_UNEXPINC+lag(DIFF_PARISH_DISC)+lag(diff(DISC),1)
 
 #HABITS:
 #lagged consumption changes are sought to be maintained (habits)
 #H0 is for PIH - that lagged consumption changes have no effect on current consumption shocks
 # Rho between -1 and above 0 indicates habit formation.
-eq_habit_asym_CONS=diff(CONS)~0+lag(diff(CONS),1)+lag(CONSPOS,1)+diff(EXPECTED_INC)
-eq_habit_rot_jones_asym_CONS=diff(CONS)~0+lag(diff(CONS),1)+lag(CONSPOS,1)+lag(DIFF_PARISH_CONS)+diff(EXPECTED_INC)+diff(UNEXPECTED_INC)
-eq_habit_asym_DISC_CONS=diff(DISC)~0+lag(diff(DISC),1)+lag(DISCPOS,1)+diff(EXPECTED_INC)
-eq_habit_rot_jones_asym_DISC_CONS=diff(DISC)~0+lag(diff(DISC),1)+lag(DISCPOS,1)+lag(DIFF_PARISH_DISC)+diff(EXPECTED_INC)+diff(UNEXPECTED_INC)
+eq_habit_asym_CONS=diff(CONS)~0+lag(diff(CONS),1)+lag(dCONSPOS,1)+diff(EXPECTED_INC)
+eq_habit_rot_jones_asym_CONS=diff(CONS)~0+lag(diff(CONS),1)+lag(dCONSPOS,1)+lag(DIFF_PARISH_CONS)+diff(EXPECTED_INC)+diff(UNEXPECTED_INC)
+eq_habit_asym_DISC_CONS=diff(DISC)~0+lag(diff(DISC),1)+lag(dDISCPOS,1)+diff(EXPECTED_INC)
+eq_habit_rot_jones_asym_DISC_CONS=diff(DISC)~0+lag(diff(DISC),1)+lag(dDISCPOS,1)+lag(DIFF_PARISH_DISC)+diff(EXPECTED_INC)+diff(UNEXPECTED_INC)
 
 #KEEPING UP WITH THE JONESES:
 #Differences between own consumption and parish mean consumption are sought to be reduced
 #H0 is that housholds maximise a purely inward looking utility function that is not dependent on parish level consumption
 #So H0 is that parish level differences from own consumption are not significant
 #positive coefficients indicate a significant Keeping Up effect.
-eq_jones_asym_CONS=diff(CONS)~0+lag(DIFF_PARISH_CONS)+lag(DIFF_PARISH_CONS_POS)+diff(EXPECTED_INC)
-eq_jones_rot_habit_asym_CONS=diff(CONS)~0+lag(DIFF_PARISH_CONS)+lag(DIFF_PARISH_CONS_POS)+lag(diff(CONS),1)+diff(EXPECTED_INC)+diff(UNEXPECTED_INC)
+eq_jones_asym_CONS=diff(CONS)~0+lag(DIFF_PARISH_CONS,1)+lag(DIFF_PARISH_CONS_POS,1)+diff(EXPECTED_INC)
+eq_jones_rot_habit_asym_CONS=diff(CONS)~0+lag(DIFF_PARISH_CONS,1)+lag(DIFF_PARISH_CONS_POS,1)+lag(diff(CONS),1)+diff(EXPECTED_INC)+diff(UNEXPECTED_INC)
 eq_jones_asym_DISC_CONS=diff(DISC)~0+lag(DIFF_PARISH_DISC)+lag(DIFF_PARISH_DISC_POS)+diff(EXPECTED_INC)
-eq_jones_rot_habit_asym_DISC_CONS=diff(DISC)~0+lag(DIFF_PARISH_DISC)+lag(DIFF_PARISH_DISC_POS)+lag(diff(DISC),1)+diff(EXPECTED_INC)+diff(UNEXPECTED_INC)
+eq_jones_rot_habit_asym_DISC_CONS=diff(DISC)~0+lag(DIFF_PARISH_CONS)+lag(DIFF_PARISH_CONS_POS)+lag(diff(DISC),1)+diff(EXPECTED_INC)+diff(UNEXPECTED_INC)
 
 #estimate models
-rot_asym_CONS=pmg(eq_rot_asym_CONS,model="dmg",data=pdat)
-rot_habit_jones_asym_CONS=pmg(eq_rot_habit_jones_asym_CONS,model="dmg",data=pdat)
-rot_asym_DISC_CONS=pmg(eq_rot_asym_DISC_CONS,model="dmg",data=pdat)
-rot_habit_jones_asym_DISC_CONS=pmg(eq_rot_habit_jones_asym_DISC_CONS,model="dmg",data=pdat)
+rot_asym_CONS=pmg(eq_rot_asym_CONS,model="cmg",data=pdat)
+rot_habit_jones_asym_CONS=pmg(eq_rot_habit_jones_asym_CONS,model="cmg",data=pdat)
+rot_asym_DISC_CONS=pmg(eq_rot_asym_DISC_CONS,model="cmg",data=pdat)
+rot_habit_jones_asym_DISC_CONS=pmg(eq_rot_habit_jones_asym_DISC_CONS,model="cmg",data=pdat)
 
-habit_asym_CONS=pmg(eq_habit_asym_CONS,model="dmg",data=pdat)
-habit_rot_jones_asym_CONS=pmg(eq_habit_rot_jones_asym_CONS,model="dmg",data=pdat)
-habit_asym_DISC_CONS=pmg(eq_habit_asym_DISC_CONS,model="dmg",data=pdat)
-habit_rot_jones_asym_DISC_CONS=pmg(eq_habit_rot_jones_asym_DISC_CONS,model="dmg",data=pdat)
+habit_asym_CONS=pmg(eq_habit_asym_CONS,model="cmg",data=pdat)
+habit_rot_jones_asym_CONS=pmg(eq_habit_rot_jones_asym_CONS,model="cmg",data=pdat)
+habit_asym_DISC_CONS=pmg(eq_habit_asym_DISC_CONS,model="cmg",data=pdat)
+habit_rot_jones_asym_DISC_CONS=pmg(eq_habit_rot_jones_asym_DISC_CONS,model="cmg",data=pdat)
 
-jones_asym_CONS=pmg(eq_jones_asym_CONS,model="dmg",data=pdat)
-jones_rot_habit_asym_CONS=pmg(eq_jones_rot_habit_asym_CONS,model="dmg",data=pdat)
-jones_asym_DISC_CONS=pmg(eq_jones_asym_DISC_CONS,model="dmg",data=pdat)
-jones_rot_habit_asym_DISC_CONS=pmg(eq_jones_rot_habit_asym_DISC_CONS,model="dmg",data=pdat)
+jones_asym_CONS=pmg(eq_jones_asym_CONS,model="cmg",data=pdat,subset=(pdat$ID!=8002 & pdat$ID!=3412))  #note these two hh both have all zero DIFF_PARISH_CONS_POS so generate NA for that - remove those two hh
+jones_rot_habit_asym_CONS=pmg(eq_jones_rot_habit_asym_CONS,model="cmg",data=pdat,subset=(pdat$ID!=8002 & pdat$ID!=3412))   #note these two hh both have all zero DIFF_PARISH_CONS_POS so generate NA for that - remove those two hh
+jones_asym_DISC_CONS=pmg(eq_jones_asym_DISC_CONS,model="cmg",data=pdat)
+jones_rot_habit_asym_DISC_CONS=pmg(eq_jones_rot_habit_asym_DISC_CONS,model="cmg",data=pdat,subset=(pdat$ID!=8002))
 
 ###############################
 #   generate results
@@ -542,7 +629,6 @@ write.table(outmat_rot,"results\\RoT results full sample.csv",sep=",",row.names=
 write.table(outmat_habit,"results\\Habits results full sample.csv",sep=",",row.names=TRUE)
 write.table(outmat_jones,"results\\Jones results full sample.csv",sep=",",row.names=TRUE)
 
-
 ###############################
 #   Simulations
 ###############################
@@ -551,7 +637,7 @@ write.table(outmat_jones,"results\\Jones results full sample.csv",sep=",",row.na
 
 source("utilities\\runSimulations.R")
 library(ggplot2)
-simulation_list = runSimulations(bg_data, data, rotlist, joneslist)
+simulation_list = runSimulations(bg_data, data, rotlist, joneslist, RESID_INC)
 
 
 # END of SCRIPT

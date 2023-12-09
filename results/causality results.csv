@@ -1,8 +1,14 @@
-"Dep. Var. = diff(Consumption)","Dep. Var. = diff(Unexpected Income)"
-"Lag(diff(Unexpected Income))","0.101*** (0.034)",NA
-"Lag(diff(Consumption))",NA,"0.017 (0.015)"
+"Estimate","Standard Error"
+"Intercept","0","(0)"
+"Lag(diff(Consumption))","0","(0.01)"
+"Lag(diff(Expected Income))","-0.06***","(0.02)"
+"Lag(diff(Unexpected Income))","-0.48***","(0.01)"
+"Lag(diff(Mean Parish Income))","-0.11***","(0.05)"
 "",NA,NA
-"R squared","0.871","0.82"
-"# households","421","421"
-"Time periods used","18","18"
-"Total # observations","7578","7578"
+"R squared","0.5",NA
+"# households","421",NA
+"Time periods used","20",NA
+"Total # observations","8460",NA
+"DW-statistic","2.04",NA
+"Baltagi-Wu LBI statistic","2.04",NA
+"Barghava et al Durbin Watson Statistic","2.13",NA

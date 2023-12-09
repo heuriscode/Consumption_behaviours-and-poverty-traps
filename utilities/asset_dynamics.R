@@ -34,23 +34,23 @@ asset_dyanmics = function(annual_asset_level,
                        LAGGED = lagged)
   polydat = na.omit(polydat)
 
-  loess_est = loess(CURRENT~ LAGGED,data = polydat)
-  lo.x = seq(quantile(polydat$LAGGED, probs = 0.0), quantile(polydat$LAGGED, probs = 1), length.out = nrow(polydat))
-  lo.y = predict(loess_est, lo.x)
-  plot(lo.y ~ lo.x, type = 'l', col = "red", xlim = xlim, ylim = ylim, xlab = xtitle, ylab = ytitle)
-  abline(a = 0, b = 1, lwd = 1)
-  title(title)
+  # loess_est = loess(CURRENT~ LAGGED,data = polydat)
+  # lo.x = seq(quantile(polydat$LAGGED, probs = 0.0), quantile(polydat$LAGGED, probs = 1), length.out = nrow(polydat))
+  # lo.y = predict(loess_est, lo.x)
+  # plot(lo.y ~ lo.x, type = 'l', col = "red", xlim = xlim, ylim = ylim, xlab = xtitle, ylab = ytitle)
+  # abline(a = 0, b = 1, lwd = 1)
+  # title(title)
 # 
-#   p = ggplot(data = polydat, aes(x = LAGGED, y = CURRENT)) +
-#     geom_smooth(method = "loess", color = "red", se = TRUE, level = 0.95) +
-#     geom_abline(intercept = 0, slope = 1, linetype = "dashed") +
-#     theme_minimal()+
-#     xlim(xlim) +
-#     ylim(ylim) +
-#     xlab(xtitle) +
-#     ylab(ytitle) +
-#     ggtitle(title)
-# 
-#   print(p)
+  p = ggplot(data = polydat, aes(x = LAGGED, y = CURRENT)) +
+    geom_smooth(method = "loess", color = "red") +
+    geom_abline(intercept = 0, slope = 1, linetype = "dashed") +
+    theme_minimal()+
+    xlim(xlim) +
+    ylim(ylim) +
+    xlab(xtitle) +
+    ylab(ytitle) +
+    ggtitle(title)
+
+  print(p)
 
 }

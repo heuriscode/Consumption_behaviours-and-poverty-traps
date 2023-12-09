@@ -2,7 +2,7 @@ get_outmat_ROT=function(model_list,intercept=FALSE){
 
 
 #ROT
-outmat=matrix(NA,nrow=18,ncol=4)
+outmat=matrix(NA,nrow=19,ncol=4)
 rownames(outmat)=c("diff Exp. Income","Std. Error",
                        "diff Exp. Income (+ve values)","Std. Error",
                        "diff Unexpected Income","Std. Error",
@@ -11,7 +11,7 @@ rownames(outmat)=c("diff Exp. Income","Std. Error",
                        "Include controls for Habits?","Include controls for 'Keeping Up'?",
                        "", #gap
                        "R-squared","Number households","Number time periods (used)","Total used observations",
-                       "Baltagi-Wu LBI statistic","Barghava et al Durbin Watson Statistic")
+                       "Durbin-Watson (DW) Statistic","Baltagi-Wu LBI statistic","Barghava et al Durbin Watson Statistic")
 colnames(outmat)=c("CONSUMPTION","CONSUMPTION","DISCRETIONARY CONSUMPTION","DISCRETIONARY CONSUMPTION")
 
 #number of HH
@@ -35,9 +35,10 @@ outmat[7,1]=paste(tab[5,1],ifelse(tab[5,4]>0.1,"",ifelse(tab[5,4]>0.05,"*",ifels
 outmat[8,1]=tab[5,2]
 outmat[10:11,1]=c("No","No")
 outmat[13,1]=c(round(summary(model_list[[1]])$rsqr,2))
-outmat[15,1]=20
-outmat[17,1]= round(pbnftest(model_list[[1]],test="lbi")$statistic,2)
-outmat[18,1]= round(pbnftest(model_list[[1]],test="bnf")$statistic,2)
+outmat[15,1]=21
+outmat[17,1]= round(pbnftest(model_list[[1]])$statistic,2)
+outmat[18,1]= round(pbnftest(model_list[[1]],test="lbi")$statistic,2)
+outmat[19,1]= round(pbnftest(model_list[[1]],test="bnf")$statistic,2)
 
 #M5 - asymmetric DISCRETIONARY CONS
 tab=round(summary(model_list[[2]])$CoefTable,3)
@@ -54,9 +55,10 @@ outmat[7,2]=paste(tab[5,1],ifelse(tab[5,4]>0.1,"",ifelse(tab[5,4]>0.05,"*",ifels
 outmat[8,2]=tab[5,2]
 outmat[10:11,2]=c("No","No")
 outmat[13,2]=c(round(summary(model_list[[2]])$rsqr,2))
-outmat[15,2]=20
-outmat[17,2]= round(pbnftest(model_list[[2]],test="lbi")$statistic,2)
-outmat[18,2]= round(pbnftest(model_list[[2]],test="bnf")$statistic,2)
+outmat[15,2]=21
+outmat[17,2]= round(pbnftest(model_list[[2]])$statistic,2)
+outmat[18,2]= round(pbnftest(model_list[[2]],test="lbi")$statistic,2)
+outmat[19,2]= round(pbnftest(model_list[[2]],test="bnf")$statistic,2)
 
 #M8 - rot asymmetric with habits and jones CONS
 tab=round(summary(model_list[[3]])$CoefTable,3)
@@ -73,9 +75,10 @@ outmat[7,3]=paste(tab[5,1],ifelse(tab[5,4]>0.1,"",ifelse(tab[5,4]>0.05,"*",ifels
 outmat[8,3]=tab[5,2]
 outmat[10:11,3]=c("Yes","Yes")
 outmat[13,3]=c(round(summary(model_list[[3]])$rsqr,2))
-outmat[15,3]=20
-outmat[17,3]= round(pbnftest(model_list[[3]],test="lbi")$statistic,2)
-outmat[18,3]= round(pbnftest(model_list[[3]],test="bnf")$statistic,2)
+outmat[15,3]=21
+outmat[17,3]= round(pbnftest(model_list[[3]])$statistic,2)
+outmat[18,3]= round(pbnftest(model_list[[3]],test="lbi")$statistic,2)
+outmat[19,3]= round(pbnftest(model_list[[3]],test="bnf")$statistic,2)
 
 #M8 - rot asymmetric with habits and jones DISCRETIONARY CONS
 tab=round(summary(model_list[[4]])$CoefTable,3)
@@ -92,9 +95,10 @@ outmat[7,4]=paste(tab[5,1],ifelse(tab[5,4]>0.1,"",ifelse(tab[5,4]>0.05,"*",ifels
 outmat[8,4]=tab[5,2]
 outmat[10:11,4]=c("Yes","Yes")
 outmat[13,4]=c(round(summary(model_list[[4]])$rsqr,2))
-outmat[15,4]=20
-outmat[17,4]= round(pbnftest(model_list[[3]],test="lbi")$statistic,2)
-outmat[18,4]= round(pbnftest(model_list[[3]],test="bnf")$statistic,2)
+outmat[15,4]=21
+outmat[16,4]= round(pbnftest(model_list[[4]])$statistic,2)
+outmat[18,4]= round(pbnftest(model_list[[4]],test="lbi")$statistic,2)
+outmat[19,4]= round(pbnftest(model_list[[4]],test="bnf")$statistic,2)
 
 
 return(outmat)
