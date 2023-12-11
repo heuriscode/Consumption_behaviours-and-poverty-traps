@@ -42,8 +42,8 @@ asset_dyanmics = function(annual_asset_level,
   # title(title)
 # 
   p = ggplot(data = polydat, aes(x = LAGGED, y = CURRENT)) +
-    geom_smooth(method = "loess", color = "red") +
-    geom_abline(intercept = 0, slope = 1, linetype = "dashed") +
+    geom_smooth(method = "loess", color = "red", linetype = "dashed") +
+    geom_abline(intercept = 0, slope = 1) +
     theme_minimal()+
     xlim(xlim) +
     ylim(ylim) +
@@ -52,5 +52,6 @@ asset_dyanmics = function(annual_asset_level,
     ggtitle(title)
 
   print(p)
+  ggsave(filename = paste("Simulation_", title, ".jpg", sep = ""), p)
 
 }

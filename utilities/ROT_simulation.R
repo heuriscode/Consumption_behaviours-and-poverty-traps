@@ -28,7 +28,7 @@ ROT_simulation = function(deterministic_income,
   
   #Initialise the weekly consumption matrix. 
   consumption = matrix(NA, nrow = n_weeks, ncol = n_households)
-  unexpected_income_mat = matrix(NA, nrow = n_weeks, ncol = n_households)
+  unexpected_income_mat = actual_income - deterministic_income
   
   #Pre-define the matrices to ensure they are consistent with both model runs. 
   savings_ROT = savings_ROT_assymetric = savings
@@ -47,7 +47,7 @@ ROT_simulation = function(deterministic_income,
        for (i in 1:n_households){
           for (j in 1:(n_weeks-1)){
             consumption_expected = deterministic_income_ROT[j,i]
-            consumption_ROT = beta_mat[j,i] * (actual_income_ROT[j,i] - deterministic_income_ROT[j,i]) 
+            consumption_ROT = beta_mat[j,i] * unexpected_income_mat[j,i] 
             residual = actual_income_ROT[j,i] - consumption_expected - consumption_ROT 
             savings_ROT[j+1,i] = savings_ROT[j,i] + residual
             
@@ -87,7 +87,7 @@ ROT_simulation = function(deterministic_income,
       for (i in 1:n_households){
         for (j in 1:(n_weeks-1)){
           consumption_expected = deterministic_income_ROT[j,i]
-          consumption_ROT = beta_mat[j,i] * (actual_income_ROT[j,i] - deterministic_income_ROT[j,i]) 
+          consumption_ROT = beta_mat[j,i] * unexpected_income_mat[j,i]
           residual = actual_income_ROT[j,i] - consumption_expected - consumption_ROT 
           savings_ROT[j+1,i] = savings_ROT[j,i] + residual
          
@@ -111,8 +111,8 @@ ROT_simulation = function(deterministic_income,
       for (i in 1:n_households){
         for (j in 1:(n_weeks-1)){
           consumption_expected = deterministic_income_ROT_assymetric[j,i]
-          if (actual_income_ROT_assymetric[j,i] - deterministic_income_ROT_assymetric[j,i] > 0){
-            consumption_ROT = betapos_mat[j,i] * (actual_income_ROT_assymetric[j,i] - deterministic_income_ROT_assymetric[j,i]) 
+          if (unexpected_income_mat[j,i] > 0){
+            consumption_ROT = betapos_mat[j,i] * unexpected_income_mat[j,i]
             residual = actual_income_ROT_assymetric[j,i] - consumption_expected - consumption_ROT 
             savings_ROT_assymetric[j+1,i] = savings_ROT_assymetric[j,i] + residual
             
@@ -124,7 +124,7 @@ ROT_simulation = function(deterministic_income,
             
             
           } else {
-            consumption_ROT = beta_mat[j,i] * (actual_income_ROT_assymetric[j,i] - deterministic_income_ROT_assymetric[j,i]) 
+            consumption_ROT = beta_mat[j,i] * unexpected_income_mat[j,i]
             residual = actual_income_ROT_assymetric[j,i] - consumption_expected - consumption_ROT 
             savings_ROT_assymetric[j+1,i] = savings_ROT_assymetric[j,i] + residual
             
@@ -167,8 +167,8 @@ ROT_simulation = function(deterministic_income,
       for (i in 1:n_households){
         for (j in 1:(n_weeks-1)){
           consumption_expected = deterministic_income_ROT_assymetric[j,i]
-          if (actual_income_ROT_assymetric[j,i] - deterministic_income_ROT_assymetric[j,i] > 0){
-            consumption_ROT = betapos_mat[j,i] * (actual_income_ROT_assymetric[j,i] - deterministic_income_ROT_assymetric[j,i]) 
+          if (unexpected_income_mat[j,i] > 0){
+            consumption_ROT = betapos_mat[j,i] * unexpected_income_mat[j,i]
             residual = actual_income_ROT_assymetric[j,i] - consumption_expected - consumption_ROT 
             savings_ROT_assymetric[j+1,i] = savings_ROT_assymetric[j,i] + residual
             
@@ -179,7 +179,7 @@ ROT_simulation = function(deterministic_income,
             }
             
           } else {
-            consumption_ROT = beta_mat[j,i] * (actual_income_ROT_assymetric[j,i] - deterministic_income_ROT_assymetric[j,i]) 
+            consumption_ROT = beta_mat[j,i] * unexpected_income_mat[j,i]
             residual = actual_income_ROT_assymetric[j,i] - consumption_expected - consumption_ROT 
             savings_ROT_assymetric[j+1,i] = savings_ROT_assymetric[j,i] + residual
             
@@ -197,6 +197,6 @@ ROT_simulation = function(deterministic_income,
   }
   
   annual_asset_level_ROT = ihs_func(annual_asset_level_ROT)
-  annual_asset_level_ROT_assymetric - ihs_func(annual_asset_level_ROT_assymetric)
+  annual_asset_level_ROT_assymetric  = ihs_func(annual_asset_level_ROT_assymetric)
   return(list(annual_asset_level_ROT, annual_asset_level_ROT_assymetric))
 } 

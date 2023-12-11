@@ -21,7 +21,7 @@ KUJ_simulation = function(deterministic_income,
 
   #Initialise the weekly consumption matrix. 
   consumption_mat_KUJ = consumption_mat_KUJ_asymmetric = matrix(NA, nrow = n_weeks, ncol = n_households)
-  unexpected_income_mat = matrix(NA, nrow = n_weeks, ncol = n_households)
+  unexpected_income_mat = actual_income - deterministic_income
   
   #Log tranform outputs, taking care of negative values
   ihs_func = function(x) {

@@ -7,7 +7,6 @@ runSimulations = function(bg_data, data, rotlist, joneslist, RESID_INC) {
   #Parameters
   n_households = 1000
   n_weeks = 52
-  n_parishes = 1000 #Number of parishes for keeping up with the joneses. 
   n_years = 25 # Number of years we observe the behaviour. 
   
   # INCOME is simulated as the sum of a deterministic income and a stochastic unexpected income draw. 
@@ -19,20 +18,17 @@ runSimulations = function(bg_data, data, rotlist, joneslist, RESID_INC) {
   # Below we confirm this with the histograms. 
   
   interest_rate = 0.25
-  minimum_percapita_income = 9000
+  minimum_percapita_income = 8000
   
   total_assets_percapita = rowSums(cbind(bg_data$VAL_ASSETS_BICYCLE,
                                          bg_data$VAL_ASSETS_BODA,
                                          bg_data$VAL_ASSETS_SAVINGS,
                                          bg_data$VAL_ASSETS_SMARTPHONE,
-                                         bg_data$VAL_ASSETS_TV,
-                                         bg_data$DEBTS_CAR_LOAN,
-                                         bg_data$DEBTS_FAMILY,
-                                         bg_data$DEBTS_FRIEND,
-                                         bg_data$DEBTS_OTHER_LOAN), na.rm = TRUE)/bg_data$NUM_IN_HOUSEHOLD
+                                         bg_data$VAL_ASSETS_TV),
+                                         na.rm = TRUE)/bg_data$NUM_IN_HOUSEHOLD
   
   #Trim outliers
-  tails = quantile(total_assets_percapita, probs=c(0, .95), na.rm = TRUE)
+  tails = quantile(total_assets_percapita, probs=c(0.05, .95), na.rm = TRUE)
   
   dividends = subset(total_assets_percapita, total_assets_percapita > tails[1] & total_assets_percapita < tails[2]) * interest_rate
   average_percapita_income_estimated = dividends/n_weeks + minimum_percapita_income 
@@ -191,10 +187,10 @@ runSimulations = function(bg_data, data, rotlist, joneslist, RESID_INC) {
   source('utilities\\asset_dynamics.R')
   asset_dyanmics(assets_PIH, 
                 yearlag = 3,
-                xlim = c(min(assets_PIH)-1,max(assets_PIH)),
-                ylim = c(min(assets_PIH)-1,max(assets_PIH)),
+                xlim = c(-1, 8),
+                ylim = c(-1, 8),
                 title = "PIH with credit constraints",
-                xtitle = "Log saving (lagged)",
+                xtitle = "Log saving (lagged t-3)",
                 ytitle = "Log savings (current)")
 
   #With Rule of Thumb
@@ -212,18 +208,18 @@ runSimulations = function(bg_data, data, rotlist, joneslist, RESID_INC) {
   
   asset_dyanmics(savings_ROT_list[[1]], 
                  yearlag = 3,
-                 xlim = c(min(savings_ROT_list[[1]])-1, max(savings_ROT_list[[1]])),
-                 ylim = c(min(savings_ROT_list[[1]])-1, max(savings_ROT_list[[1]])),
+                 xlim = c(-1, 8),
+                 ylim = c(-1, 8),
                  title = "ROT with symmetry",
-                 xtitle = "Log saving (lagged)",
+                 xtitle = "Log saving (lagged t-3)",
                  ytitle = "Log savings (current)")
   
   asset_dyanmics(savings_ROT_list[[2]], 
                  yearlag = 3,
-                 xlim = c(min(savings_ROT_list[[2]])-1, max(savings_ROT_list[[2]])),
-                 ylim = c(min(savings_ROT_list[[2]])-1, max(savings_ROT_list[[2]])),
+                 xlim = c(-1, 8),
+                 ylim = c(-1, 8),
                  title = "ROT with asymmetry",
-                 xtitle = "Log saving (lagged)",
+                 xtitle = "Log saving (lagged t-3)",
                  ytitle = "Log savings (current)")
 
   # Keeping up with the Joneses. 
@@ -242,19 +238,54 @@ runSimulations = function(bg_data, data, rotlist, joneslist, RESID_INC) {
   
   
   asset_dyanmics(savings_KUJ_list[[1]],
-                yearlag = 5,
-                xlim =  c(min(savings_KUJ_list[[1]])-1, max(savings_KUJ_list[[1]])),
-                ylim =  c(min(savings_KUJ_list[[1]])-1, max(savings_KUJ_list[[1]])),
+                yearlag = 3,
+                xlim =  c(-1, 8),
+                ylim =  c(-1, 8),
                 title = "KUJ with symmetry",
                 xtitle = "Log saving (lagged)",
                 ytitle = "Log savings (current)")
   
   asset_dyanmics(savings_KUJ_list[[2]], 
-                 yearlag = 5,
-                 xlim = c(min(savings_KUJ_list[[2]])-1, max(savings_KUJ_list[[2]])),
-                 ylim = c(min(savings_KUJ_list[[2]])-1, max(savings_KUJ_list[[2]])),
+                 yearlag = 3,
+                 xlim = c(-1, 8), 
+                 ylim = c(-1, 8),
                  title = "KUJ with asymmetry",
-                 xtitle = "Log saving (lagged)",
+                 xtitle = "Log saving (lagged t-3)",
                  ytitle = "Log savings (current)")
+  
+  # ALL
+  source("utilities\\All_simulation.R")
+  savings_All_list = All_simulation( deterministic_income_mat, 
+                                     actual_income_mat,
+                                     net_savings_mat,
+                                     beta_mat,
+                                     betapos_mat,
+                                     gamma_mat,
+                                     gammapos_mat,
+                                     annual_asset_level,
+                                     interest_rate,
+                                     minimum_percapita_income,
+                                     closing_consumption_level,
+                                     sd_unexpected_inc,
+                                     tails[1])
+  
+  
+  asset_dyanmics(savings_All_list[[1]],
+                 yearlag = 3,
+                 xlim =  c(-1, 8),
+                 ylim =  c(-1, 8),
+                 title = "ROT and KUJ with symmetry",
+                 xtitle = "Log saving (lagged t-3)",
+                 ytitle = "Log savings (current)")
+  
+  asset_dyanmics(savings_All_list[[2]], 
+                 yearlag = 3,
+                 xlim = c(min(savings_All_list[[1]]), 8),
+                 ylim = c(min(savings_All_list[[1]]), 8),
+                 title = "ROT and KUJ with asymmetry",
+                 xtitle = "Log saving (lagged t-3)",
+                 ytitle = "Log savings (current)")
+  
+  
   
 }

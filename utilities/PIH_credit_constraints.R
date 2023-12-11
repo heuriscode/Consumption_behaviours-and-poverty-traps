@@ -20,7 +20,7 @@ PIH_credit_constraints = function(deterministic_income,
   #Initialise the weekly consumption matrix. 
   expected_income = matrix(NA, nrow = n_weeks, ncol = n_households)
   consumption = matrix(NA, nrow = n_weeks, ncol = n_households)
-  unexpected_income_mat = matrix(NA, nrow = n_weeks, ncol = n_households)
+  unexpected_income_mat = actual_income - deterministic_income
   
   # Log transform the outputs, retaining the negative values. 
   ihs_func = function(x) {
