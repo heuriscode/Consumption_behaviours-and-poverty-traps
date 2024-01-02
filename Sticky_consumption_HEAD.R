@@ -548,9 +548,6 @@ write.table(caus_mat,"results\\causality results.csv",sep=",")
 # MAIN regressions TOTAL CONSUMPTION
 ##################################################
 
-#### FIRST CREATE MEANS OF MAIN VARIABLES AND DVs TO DO A MANUAL CMG MODEL - THIS ALLOWS ME TO INCLUDE LAGS AND LEADS OF THE KEY INDEPENDENT VARIABLES  ####
-
-#diff(CONS), diff(EXPECTED_INC), diff(UNEXPECTED_INC), lag(diff(CONS),1), lag(diff(DISC),1), lag(DIFF_PARISH_CONS,1)
 #ROT:
 #PIH predicts consumption = expected income
 #PIH predicts saving of a large portion of unexpected income (spreading across time)
@@ -581,23 +578,15 @@ eq_jones_asym_DISC_CONS=diff(DISC)~0+lag(DIFF_PARISH_DISC)+lag(DIFF_PARISH_DISC_
 eq_jones_rot_habit_asym_DISC_CONS=diff(DISC)~0+lag(DIFF_PARISH_CONS)+lag(DIFF_PARISH_CONS_POS)+lag(diff(DISC),1)+diff(EXPECTED_INC)+diff(UNEXPECTED_INC)
 
 #estimate models
-rot_asym_CONS=pmg(eq_rot_asym_CONS,model="cmg",data=pdat)
-rot_habit_jones_asym_CONS=pmg(eq_rot_habit_jones_asym_CONS,model="cmg",data=pdat)
-rot_asym_DISC_CONS=pmg(eq_rot_asym_DISC_CONS,model="cmg",data=pdat)
-rot_habit_jones_asym_DISC_CONS=pmg(eq_rot_habit_jones_asym_DISC_CONS,model="cmg",data=pdat)
+source(here("utilities","estimateModels.R"))
+estimated_models = estimateModels(pdat)
 
-habit_asym_CONS=pmg(eq_habit_asym_CONS,model="cmg",data=pdat)
-habit_rot_jones_asym_CONS=pmg(eq_habit_rot_jones_asym_CONS,model="cmg",data=pdat)
-habit_asym_DISC_CONS=pmg(eq_habit_asym_DISC_CONS,model="cmg",data=pdat)
-habit_rot_jones_asym_DISC_CONS=pmg(eq_habit_rot_jones_asym_DISC_CONS,model="cmg",data=pdat)
-
-jones_asym_CONS=pmg(eq_jones_asym_CONS,model="cmg",data=pdat,subset=(pdat$ID!=8002 & pdat$ID!=3412))  #note these two hh both have all zero DIFF_PARISH_CONS_POS so generate NA for that - remove those two hh
-jones_rot_habit_asym_CONS=pmg(eq_jones_rot_habit_asym_CONS,model="cmg",data=pdat,subset=(pdat$ID!=8002 & pdat$ID!=3412))   #note these two hh both have all zero DIFF_PARISH_CONS_POS so generate NA for that - remove those two hh
-jones_asym_DISC_CONS=pmg(eq_jones_asym_DISC_CONS,model="cmg",data=pdat)
-jones_rot_habit_asym_DISC_CONS=pmg(eq_jones_rot_habit_asym_DISC_CONS,model="cmg",data=pdat,subset=(pdat$ID!=8002))
+rotlist = estimated_models$rotlist
+habitlist = estimated_models$habitlist
+joneslist = estimatd_mdoels$joneslist
 
 ###############################
-#   generate results
+#   generate main results
 ###############################
 
 #16 models - 4 each in symmetric, 3 each in asymmetric (some symmetric models are shared)
@@ -608,20 +597,14 @@ jones_rot_habit_asym_DISC_CONS=pmg(eq_jones_rot_habit_asym_DISC_CONS,model="cmg"
 
 #ROT
 source("utilities\\get_outmat_ROT_08_12_20.R")
-rotlist=list(rot_asym_CONS,rot_habit_jones_asym_CONS,
-             rot_asym_DISC_CONS,rot_habit_jones_asym_DISC_CONS)
 outmat_rot=get_outmat_ROT(rotlist,intercept=FALSE)
 
 #HABITS
 source("utilities\\get_outmat_HABIT_08_12_20.R")
-habitlist=list(habit_asym_CONS,habit_rot_jones_asym_CONS,
-               habit_asym_DISC_CONS,habit_rot_jones_asym_DISC_CONS)
 outmat_habit=get_outmat_HABIT(habitlist,intercept=FALSE)
 
 #JONES
 source("utilities\\get_outmat_JONES_08_12_20.R")
-joneslist=list(jones_asym_CONS,jones_rot_habit_asym_CONS,
-               jones_asym_DISC_CONS,jones_rot_habit_asym_DISC_CONS)
 outmat_jones=get_outmat_JONES(joneslist,intercept=FALSE)
 
 #write tables
@@ -640,5 +623,34 @@ library(ggplot2)
 simulation_list = runSimulations(bg_data, data, rotlist, joneslist, RESID_INC)
 
 
+###############################
+# Aggregation concerns
+###############################
+
+## this component undertakes a number of tests to consider whether 
+#  aggregation across time induces a tendency to accept the null 
+#  hypothesis that the PIH is correct/sufficient
+source(here("utilities","getAggregationDataframes.R"))
+
+#run aggregation script
+aggregated_dfs = getAggregatedDataframes()
+  #returns a list:
+    #first level elements are the three aggregation levels (2, 4, 6 weeks)
+    #second level are the models
+
+#run estimation of core models for each aggregation data frame
+models_2_weeks = estimateModels(aggregated_dfs$two_weeks_aggregation)
+models_4_weeks = estimateModels(aggregated_dfs$four_weeks_aggregation)
+models_6_weeks = estimateModels(aggregated_dfs$six_weeks_aggregation)
+  #each object is a list with the three model types (rot, habits, jones) as the upper level
+  # the next lower level in each case are the four different model combinations estimated.  
+  # we are interested primiarliy in the X and YY models. 
+rotlist = estimated_models$rotlist
+habitlist = estimated_models$habitlist
+joneslist = estimatd_mdoels$joneslist
+
+
 # END of SCRIPT
+
+
 
