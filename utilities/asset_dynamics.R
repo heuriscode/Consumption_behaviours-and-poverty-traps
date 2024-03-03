@@ -49,7 +49,12 @@ asset_dyanmics = function(annual_asset_level,
     ylim(ylim) +
     xlab(xtitle) +
     ylab(ytitle) +
-    ggtitle(title)
+    ggtitle(title) + 
+    theme(
+      axis.text = element_text(size = 14),  
+      axis.title = element_text(size = 14),  
+      plot.title = element_text(size = 16)  
+    ) 
 
   print(p)
   ggsave(filename = paste("Simulation_", title, ".jpg", sep = ""), p)

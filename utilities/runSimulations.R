@@ -158,7 +158,6 @@ runSimulations = function(bg_data, data, rotlist, joneslist, RESID_INC) {
     gammapos_mat[,i] = rnorm(1, gammapos_mean, gammapos_sd) 
   }
   
-  
   # Finally, set up empty annual asset and consumption matrices 
   # The annual asset matrix will be used to determine asset dynamics 
   # Whereas the consumption matrix is necessary to initialise the first period consumption based on KUJ
