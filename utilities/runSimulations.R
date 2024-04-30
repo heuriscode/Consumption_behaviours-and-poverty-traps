@@ -131,17 +131,12 @@ runSimulations = function(bg_data, data, rotlist, joneslist, RESID_INC) {
   for (i in 1:n_households) {
     betapos_mat[,i] = rnorm(1, betapos_mean, betapos_sd ) 
   }
-  
-  # # For Keeping up with the Joneses - randomly map households to parishes. 
-  # # Create a vector of parish assignments for households
-  # parish_assignments = rep(1:n_parishes, each = floor(n_households/n_parishes))
-  # remaining_households = n_households - length(parish_assignments)
-  # remaining_assignments = sample(1:n_parishes, remaining_households, replace = TRUE)
-  # parish_assignments = c(parish_assignments, remaining_assignments)
-  # parish_assignments = sample(parish_assignments)
+
   
   # Now retrieve gamma for parish level consumption
   # We derive parish level consumption in the function where consumption is determined based on PIH, ROT, and KUJ. 
+  # We assume all households belong to the same parish - as households are randomly drawn from the same distribution
+  # The mean of the entire sample will approach the mean of any assumed subsamples from this distribution anyway. 
   gamma_mat = matrix(NA, nrow = n_weeks, ncol = n_households)
   gamma_mean = summary(joneslist[[2]])$CoefTable[1,1]
   gamma_sd = summary(rotlist[[2]])$CoefTable[1,2]
