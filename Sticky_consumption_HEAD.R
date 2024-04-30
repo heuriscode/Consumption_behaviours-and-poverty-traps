@@ -578,12 +578,12 @@ eq_jones_asym_DISC_CONS=diff(DISC)~0+lag(DIFF_PARISH_DISC)+lag(DIFF_PARISH_DISC_
 eq_jones_rot_habit_asym_DISC_CONS=diff(DISC)~0+lag(DIFF_PARISH_CONS)+lag(DIFF_PARISH_CONS_POS)+lag(diff(DISC),1)+diff(EXPECTED_INC)+diff(UNEXPECTED_INC)
 
 #estimate models
-source(here("utilities","estimateModels.R"))
+source(here("estimateModels.R"))
 estimated_models = estimateModels(pdat)
 
 rotlist = estimated_models$rotlist
 habitlist = estimated_models$habitlist
-joneslist = estimatd_mdoels$joneslist
+joneslist = estimated_models$joneslist
 
 ###############################
 #   generate main results
@@ -621,7 +621,6 @@ write.table(outmat_jones,"results\\Jones results full sample.csv",sep=",",row.na
 source("utilities\\runSimulations.R")
 library(ggplot2)
 simulation_list = runSimulations(bg_data, data, rotlist, joneslist, RESID_INC)
-
 
 ###############################
 # Aggregation concerns

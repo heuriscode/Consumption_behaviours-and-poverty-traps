@@ -1,6 +1,8 @@
 ## core estimation function
 
-estimateModels = function(reg_df){
+estimateModels = function(pdat){
+  
+    reg_df = pdat
 
     ## estimate models
     rot_asym_CONS=pmg(eq_rot_asym_CONS,model="cmg",data=reg_df)
