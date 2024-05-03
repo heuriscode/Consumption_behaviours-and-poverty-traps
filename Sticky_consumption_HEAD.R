@@ -21,7 +21,8 @@ load(file="data\\data.Rda")
 load(file="data\\bg_data.Rda")
 
 #load libraries
-library(plm)         #mean group estimators for panel data
+library(plm)         # mean group estimators for panel data
+library(ggplot2)     # For simulation plots
 
 #load scripts and programs
 source("utilities\\getDWforPGM.R")  #manual DW test for MG estimators
@@ -578,8 +579,8 @@ eq_jones_asym_DISC_CONS=diff(DISC)~0+lag(DIFF_PARISH_DISC)+lag(DIFF_PARISH_DISC_
 eq_jones_rot_habit_asym_DISC_CONS=diff(DISC)~0+lag(DIFF_PARISH_CONS)+lag(DIFF_PARISH_CONS_POS)+lag(diff(DISC),1)+diff(EXPECTED_INC)+diff(UNEXPECTED_INC)
 
 #estimate models
-source(here("estimateModels.R"))
-estimated_models = estimateModels(pdat)
+source(here("Utilities", "estimateModels.R"))
+estimated_models = estimateModels()
 
 rotlist = estimated_models$rotlist
 habitlist = estimated_models$habitlist
@@ -619,7 +620,6 @@ write.table(outmat_jones,"results\\Jones results full sample.csv",sep=",",row.na
 #In this section, we use the coefficients in the estimation to demonstrate dynamics in income, consumption and asset accumulation. 
 
 source("utilities\\runSimulations.R")
-library(ggplot2)
 simulation_list = runSimulations(bg_data, data, rotlist, joneslist, RESID_INC)
 
 ###############################

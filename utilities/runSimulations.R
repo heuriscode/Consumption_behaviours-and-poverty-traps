@@ -5,8 +5,8 @@
 
 runSimulations = function(bg_data, data, rotlist, joneslist, RESID_INC) {
   #Parameters
-  n_households = 1000
-  n_weeks = 52
+  n_households = 1000 #number of simulated households
+  n_weeks = 52 # weekly timesteps
   n_years = 25 # Number of years we observe the behaviour. 
   
   # INCOME is simulated as the sum of a deterministic income and a stochastic unexpected income draw. 
@@ -236,7 +236,7 @@ runSimulations = function(bg_data, data, rotlist, joneslist, RESID_INC) {
                 xlim =  c(-1, 8),
                 ylim =  c(-1, 8),
                 title = "KUJ with symmetry",
-                xtitle = "Log saving (lagged)",
+                xtitle = "Log saving (lagged t-3)",
                 ytitle = "Log savings (current)")
   
   asset_dyanmics(savings_KUJ_list[[2]], 
