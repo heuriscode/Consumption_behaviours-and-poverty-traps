@@ -1,12 +1,12 @@
-get_linear_low = function(){
+get_linear_middle = function(){
 
 
-    eq_exp_inc=INC~lag(INC,1:2)+lag(CONS,1:2)+poly(WEEK, 2)
-    k=7
+    eq_exp_inc=INC~lag(INC,1:2)+lag(CONS,1:2)+lag(PARISH_CONS,1:2)+poly(WEEK,2)
+    k=9 #ensure this is equal to target coefficients length
 
     #use the mg, NOT the ccemg model as common correlated effects are unknown to households before occurence
     predinc_reg=pmg(eq_exp_inc,data=pdat,model="mg")
-    #multiple r-squared = 0.435
+    #multiple r-squared = 0.519
 
     #Can use F-test if needed with custom function source:
     #source(here("utilities","getFSTATforPGM.R"))
@@ -37,6 +37,7 @@ get_linear_low = function(){
     ### CHECK AND REDO FOR THE FINAL REGRESSSION ###
     rownames(predinc_mat)=c("Intercept","L1(Income)","L2(Income)",
                             "L1(Consumption)","L2(Consumption)",
+                            "L1(Parish mean consumption)","L2(Parish mean consumption)",
                             "Week","Week^2",
                             "",
                             "R-squared","# households","Time periods used","Total # observations",
@@ -44,7 +45,7 @@ get_linear_low = function(){
 
     colnames(predinc_mat)=c("Estimate","Standard Error","P-value")
 
-    write.table(predinc_mat,"results\\predicted income regression_LOW_PREDICTION_POWER.csv",sep=",")
+    write.table(predinc_mat,"results\\predicted income regression_MIDDLE_PREDICTION_POWER.csv",sep=",")
 
     #get fitted values and residuals
     fittedlist=getplmfitted(predinc_reg,pdat)

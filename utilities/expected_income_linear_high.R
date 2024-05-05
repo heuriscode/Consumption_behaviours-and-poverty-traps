@@ -1,23 +1,16 @@
-get_linear_good = function(){
+get_linear_high = function(){
 
 
-    eq_exp_inc=INC~lag(INC,1)+lag(CONS,1)+lag(PARISH_CONS,1)+poly(WEEK,3)
+    eq_exp_inc=INC~lag(INC,1:2)+lag(CONS,1:2)+lag(PARISH_CONS,1:2)+poly(WEEK,4)
+    k=11 #ensure this is equal to target coefficients length
 
     #use the mg, NOT the ccemg model as common correlated effects are unknown to households before occurence
-    predinc_reg=pmg(eq_exp_inc,data=pdat,model="dmg")
-    #multiple r-squared = 0.46
+    predinc_reg=pmg(eq_exp_inc,data=pdat,model="mg")
+    #multiple r-squared = 0.519
 
-    ### lagged consumption (both), lagged ratio of disc to total cons (both) and lagged parish consumption (second lag) are all insignificant but evidence that they improve the model
-    # joint f-test:
-    #   with no lagged PARISH_CON:  F-stat ~ 1.3
-    #   OR no DISC_TO_CONS_RAT:  F-stat ~ 1.3
-    # so can reject restrictions individually but not a strong rejection
-    # 28% of households involved a strong rejection of these restrictions (<5% p-value)
-    # so good evidence that, for some households, there is a stronger predictability for household income.
-
-    #F-test
+    #Can use F-test if needed with custom function source:
+    #source(here("utilities","getFSTATforPGM.R"))
     #Fstat = getFSTATforPGM(predinc_reg_RESTRICT,predinc_reg,pdat)
-
 
     #DW-test - provides vector by household, take mean to get mean DW test result
     DWstat = round(pbnftest(predinc_reg)$statistic,2)
@@ -26,16 +19,16 @@ get_linear_good = function(){
 
 
     #generate results matrix
-    len=length(predinc_reg$coef[1:7])
+    len=length(predinc_reg$coef[1:k])
     predinc_mat=matrix(NA,nrow=(8+len),ncol=3)
-    predinc_mat[1:len,]=round(summary(predinc_reg)$Coef[1:7,-3],3)
+    predinc_mat[1:len,]=round(summary(predinc_reg)$Coef[1:k,-3],3)
 
     #manually enter values for R2, #hh, #time, #total, and DWtest because I'm feeling brain-lazy for thinking how to code this.
     predinc_mat[(len+2):(len+8),1]=c(
         summary(predinc_reg)$rsqr,
         length(predinc_reg$fitted.values),
-        22,
-        9306,
+        length(predinc_reg$fitted.values)/(dim(predinc_reg$indcoef)[2]),
+        dim(predinc_reg$indcoef)[2],
         DWstat,
         BNF,
         LBI)
@@ -45,18 +38,19 @@ get_linear_good = function(){
     rownames(predinc_mat)=c("Intercept","L1(Income)","L2(Income)",
                             "L1(Consumption)","L2(Consumption)",
                             "L1(Parish mean consumption)","L2(Parish mean consumption)",
+                            "Week","Week^2","Week^3","Week^4",
                             "",
                             "R-squared","# households","Time periods used","Total # observations",
                             "DW statistic","Barghava et al Durbin Watson Statistic","Baltagi-Wu LBI statistic")
 
     colnames(predinc_mat)=c("Estimate","Standard Error","P-value")
 
-    write.table(predinc_mat,"results\\predicted income regression.csv",sep=",")
+    write.table(predinc_mat,"results\\predicted income regression_HIGH_PREDICTION_POWER.csv",sep=",")
 
     #get fitted values and residuals
     fittedlist=getplmfitted(predinc_reg,pdat)
     EXPECT_INC=fittedlist[[1]]  #this represents the predictable portion of income
-    RESID_INC=fittedlist[[2]]   #this represents the unexpected portion of income CALCULATED AS OBSERVED MINUS EXPECTED!!!
+    RESID_INC=fittedlist[[2]]   #this represents the unexpected portion of income as the residual (actual minus fitted)
 
     #get differences for the pos components manually due to plm limitations
     dPOS_EXPINC=dPOS_UNEXPINC=rep(NA,nrow(dat))
@@ -77,11 +71,14 @@ get_linear_good = function(){
 
     return(
         data.frame(
+            "EXPECT_INC" = EXPECT_INC,
+            "RESID_INC" = RESID_INC,
             "POS_EXPINC" = POS_EXPINC,
             "POS_UNEXPINC" = POS_UNEXPINC,
             "NEG_EXPINC" = NEG_EXPINC,
             "NEG_UNEXPINC" = NEG_UNEXPINC,
-            "dCONS" = dCONS
+            "dPOS_EXPINC"=dPOS_EXPINC,
+            "dPOS_UNEXPINC"=dPOS_UNEXPINC
         )
     )
 }

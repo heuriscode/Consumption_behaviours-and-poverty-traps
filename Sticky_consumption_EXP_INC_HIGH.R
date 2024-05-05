@@ -30,9 +30,7 @@ source(here("utilities","getplmfitted.R"))  #manual predicted and residuals seri
 source(here("utilities","get_outmat_ROT_08_12_20.R"))
 source(here("utilities","get_outmat_HABIT_08_12_20.R"))
 source(here("utilities","get_outmat_JONES_08_12_20.R"))
-source(here("utilities","expected_income_linear_good.R"))
 source(here("utilities","expected_income_linear_low.R"))
-source(here("utilities","expected_income_gams.R"))
 
 ############################################
 #NOTES :
@@ -163,6 +161,10 @@ data=data[-which(data$SURVEY_ID %in% missingobs),]
 bg_data$VILLAGE=as.factor(droplevels(bg_data$VILLAGE))       #RESET VILLAGE LEVELS
 bg_data$PARISH=as.factor(droplevels(bg_data$PARISH))       #RESET VILLAGE LEVELS
 bg_data$SUBCOUNTY=as.factor(droplevels(bg_data$SUBCOUNTY))       #RESET  LEVELS
+
+## Also remove ID 8002 and 3412 as having no variation in parish level discretionary consumption
+data = data[-which(data$SURVEY_ID==8002 | data$SURVEY_ID==3412),]
+bg_data = bg_data[-which(bg_data$ID==8002 | bg_data$ID==3412),]
 
 ###########################################################################
 #  CALCULATE VILLAGE-LEVEL MEASURE OF INCOME FOR 'KEEPING UP' HYPOTHESIS
@@ -405,69 +407,24 @@ pdat=pdata.frame(dat,index=c("ID","WEEK"))
 #  1. A high-predictive power one (gams function)
 #  2. A target predictive one (using linear estimator with all components)
 #  3. A low-predictive power one (linear estimator with fewer components)
-source(here("utilities","expected_income_linear_good.R"))
-source(here("utilities","expected_income_linear_low.R"))
-source(here("utilities","expected_income_gams.R"))
 
-res_med = get_linear_good()
-res_low = get_linear_low()
-res_high = get_gams()
+### Note2: These are implemented as different main scripts - see main folder and run these separately.
 
-pdat=pdata.frame(data.frame(pdat,"EXPECTED_INC"=res_med$EXPECT_INC,"UNEXPECTED_INC"=RESID_INC,"POS_EXPINC"=NEG_EXPINC,"POS_UNEXPINC"=NEG_UNEXPINC,"POS_EXPINC"=POS_EXPINC,"POS_UNEXPINC"=POS_UNEXPINC,"dPOS_EXPINC"=dPOS_EXPINC,"dPOS_UNEXPINC"=dPOS_UNEXPINC,"dCONS"=dCONS),index=c("ID","WEEK"))
+res_high = get_linear_high()
 
-
-#DW-test - provides vector by household, take mean to get mean DW test result
-DWstat = round(pbnftest(predinc_reg)$statistic,2)
-BNF=round(pbnftest(predinc_reg,test="bnf")$statistic,2)
-LBI=round(pbnftest(predinc_reg,test="lbi")$statistic,2)
-
-
-#generate results matrix
-len=length(predinc_reg$coef)
-predinc_mat=matrix(NA,nrow=(8+len),ncol=3)
-predinc_mat[1:len,]=round(summary(predinc_reg)$Coef[,-3],3)
-
-#manually enter values for R2, #hh, #time, #total, and DWtest because I'm feeling brain-lazy for thinking how to code this.
-predinc_mat[(len+2):(len+8),1]=c(0.54,423,22,9306,DWstat,BNF,LBI)
-
-
-### CHECK AND REDO FOR THE FINAL REGRESSSION ###
-rownames(predinc_mat)=c("Intercept","L1(Income)","L2(Income)",
-                        "L1(Consumption)","L2(Consumption)",
-                        "L1 Own Discretionary/Total Consumption Ratio",
-                        "L1(Parish mean income)","L2(Parish mean income)",
-                        "L1(Parish mean consumption)","L2(Parish mean consumption)",
-                        "",
-                        "R-squared","# households","Time periods used","Total # observations",
-                        "DW statistic","Barghava et al Durbin Watson Statistic","Baltagi-Wu LBI statistic")
-
-colnames(predinc_mat)=c("Estimate","Standard Error","P-value")
-
-write.table(predinc_mat,"results\\predicted income regression.csv",sep=",")
-
-#get fitted values and residuals
-fittedlist=getplmfitted(predinc_reg,pdat)
-EXPECT_INC=fittedlist[[1]]  #this represents the predictable portion of income
-RESID_INC=fittedlist[[2]]   #this represents the unexpected portion of income CALCULATED AS OBSERVED MINUS EXPECTED!!!
-
-#get differences for the pos components manually due to plm limitations
-dPOS_EXPINC=dPOS_UNEXPINC=rep(NA,nrow(dat))
-for(i in 1:nrow(dat)){
-  if(i==1){next}
-  if(dat$ID[i]!=dat$ID[(i-1)]){next}
-  expdiff=EXPECT_INC[i]-EXPECT_INC[(i-1)]
-  unexpdiff=RESID_INC[i]-RESID_INC[(i-1)]
-  dPOS_EXPINC[i]=replace(expdiff,expdiff<0,0)
-  dPOS_UNEXPINC[i]=replace(unexpdiff,unexpdiff<0,0)
-}
-
-POS_EXPINC=replace(EXPECT_INC,EXPECT_INC<0,0)
-POS_UNEXPINC=replace(RESID_INC,RESID_INC<0,0)
-NEG_EXPINC=replace(EXPECT_INC,EXPECT_INC>0,0)
-NEG_UNEXPINC=replace(RESID_INC,RESID_INC>0,0)
-dCONS = diff(pdat$CONS)
-
-pdat=pdata.frame(data.frame(pdat,"EXPECTED_INC"=EXPECT_INC,"UNEXPECTED_INC"=RESID_INC,"POS_EXPINC"=NEG_EXPINC,"POS_UNEXPINC"=NEG_UNEXPINC,"POS_EXPINC"=POS_EXPINC,"POS_UNEXPINC"=POS_UNEXPINC,"dPOS_EXPINC"=dPOS_EXPINC,"dPOS_UNEXPINC"=dPOS_UNEXPINC,"dCONS"=dCONS),index=c("ID","WEEK"))
+## Create different pdata frames for each of the different expected income models
+pdat=pdata.frame(data.frame(
+    dat,"EXPECTED_INC"=res_low$EXPECT_INC,
+    "UNEXPECTED_INC"=res_low$RESID_INC,
+    "POS_EXPINC"=res_low$NEG_EXPINC,
+    "POS_UNEXPINC"=res_low$NEG_UNEXPINC,
+    "POS_EXPINC"=res_low$POS_EXPINC,
+    "POS_UNEXPINC"=res_low$POS_UNEXPINC,
+    "dPOS_EXPINC"=res_low$dPOS_EXPINC,
+    "dPOS_UNEXPINC"=res_low$dPOS_UNEXPINC
+    ),
+    index=c("ID","WEEK")
+)
 
 ###################################
 #  HISTOGRAMS FOR CONSUMPTION/INCOME
@@ -523,9 +480,36 @@ LBI_U=round(pbnftest(reg_persistenceUNEXPINC,test="lbi")$statistic,2)
 
 
 modlist=list(reg_persistenceINC,reg_persistenceEXPINC,reg_persistenceUNEXPINC)
-modelstatmat=cbind(c(0.58,423,19,8037,DWstat_I,BNF_I,LBI_I),
-                   c(0.59,423,17,7191,DWstat_E,BNF_E,LBI_E),
-                   c(0.66,423,17,7191,DWstat_U,BNF_U,LBI_U))
+modelstatmat=cbind(
+  c(
+      summary(modlist[[1]])$rsqr,                                         #rsqr
+      (dim(modlist[[1]]$indcoef)[2]),                                     #num households
+      length(modlist[[1]]$fitted.values)/(dim(modlist[[1]]$indcoef)[2]),  #time periods used
+      length(modlist[[1]]$fitted.values),                                 #total observations used
+      DWstat_I,                                                           #Durbin Watson statistic
+      BNF_I,                                                              #BNF statistic
+      LBI_I                                                               #LBI statistic
+    ),                                                             
+  c(
+      summary(modlist[[2]])$rsqr,                                         #rsqr
+      (dim(modlist[[2]]$indcoef)[2]),                                     #num households
+      length(modlist[[2]]$fitted.values)/(dim(modlist[[2]]$indcoef)[2]),  #time periods used
+      length(modlist[[2]]$fitted.values),                                 #total observations used
+      DWstat_E,                                                           #Durbin Watson statistic
+      BNF_E,                                                              #BNF statistic
+      LBI_E                                                               #LBI statistic
+    ), 
+  c(
+      summary(modlist[[3]])$rsqr,                                         #rsqr
+      (dim(modlist[[3]]$indcoef)[2]),                                     #num households
+      length(modlist[[3]]$fitted.values)/(dim(modlist[[3]]$indcoef)[2]),  #time periods used
+      length(modlist[[3]]$fitted.values),                                 #total observations used
+      DWstat_U,                                                           #Durbin Watson statistic
+      BNF_U,                                                              #BNF statistic
+      LBI_U                                                               #LBI statistic
+    ) 
+)
+
 for(rrr in 1:5){
   for(ccc in 1:length(modlist)){
     mod=summary(modlist[[ccc]])$Coef
@@ -538,7 +522,7 @@ persist_mat[7:13,1]=modelstatmat[,1]
 persist_mat[7:13,2]=modelstatmat[,2]
 persist_mat[7:13,3]=modelstatmat[,3]
 
-write.table(persist_mat,"results\\income persistence results.csv",sep=",")
+write.table(persist_mat,"results\\income persistence results_HIGH_EXP_INC.csv",sep=",")
 
 ################################
 #CAUSALITY CHECK:
@@ -577,7 +561,7 @@ rownames(caus_mat)=c("Intercept","Lag(diff(Consumption))","Lag(diff(Expected Inc
                      "DW-statistic","Baltagi-Wu LBI statistic","Barghava et al Durbin Watson Statistic")
 colnames(caus_mat)=c("Estimate","Standard Error")
 
-write.table(caus_mat,"results\\causality results.csv",sep=",")
+write.table(caus_mat,"results\\causality results_HIGH_EXP_INC.csv",sep=",")
 
 ##################################################
 # MAIN regressions TOTAL CONSUMPTION
@@ -614,11 +598,11 @@ eq_jones_rot_habit_asym_DISC_CONS=diff(DISC)~0+lag(DIFF_PARISH_CONS)+lag(DIFF_PA
 
 #estimate models
 source(here("utilities","estimateModels.R"))
-estimated_models = estimateModels(pdat)
+estimated_models = estimateModels(reg_df=pdat)
 
 rotlist = estimated_models$rotlist
 habitlist = estimated_models$habitlist
-joneslist = estimatd_mdoels$joneslist
+joneslist = estimated_models$joneslist
 
 ###############################
 #   generate main results
@@ -643,9 +627,9 @@ source("utilities\\get_outmat_JONES_08_12_20.R")
 outmat_jones=get_outmat_JONES(joneslist,intercept=FALSE)
 
 #write tables
-write.table(outmat_rot,"results\\RoT results full sample.csv",sep=",",row.names=TRUE)
-write.table(outmat_habit,"results\\Habits results full sample.csv",sep=",",row.names=TRUE)
-write.table(outmat_jones,"results\\Jones results full sample.csv",sep=",",row.names=TRUE)
+write.table(outmat_rot,"results\\RoT results full sample_HIGH_EXP_INC.csv",sep=",",row.names=TRUE)
+write.table(outmat_habit,"results\\Habits results full sample_HIGH_EXP_INC.csv",sep=",",row.names=TRUE)
+write.table(outmat_jones,"results\\Jones results full sample_HIGH_EXP_INC.csv",sep=",",row.names=TRUE)
 
 ###############################
 #   Simulations
@@ -656,34 +640,6 @@ write.table(outmat_jones,"results\\Jones results full sample.csv",sep=",",row.na
 source("utilities\\runSimulations.R")
 library(ggplot2)
 simulation_list = runSimulations(bg_data, data, rotlist, joneslist, RESID_INC)
-
-
-###############################
-# Aggregation concerns
-###############################
-
-## this component undertakes a number of tests to consider whether 
-#  aggregation across time induces a tendency to accept the null 
-#  hypothesis that the PIH is correct/sufficient
-source(here("utilities","getAggregationDataframes.R"))
-
-#run aggregation script
-aggregated_dfs = getAggregatedDataframes()
-  #returns a list:
-    #first level elements are the three aggregation levels (2, 4, 6 weeks)
-    #second level are the models
-
-#run estimation of core models for each aggregation data frame
-models_2_weeks = estimateModels(aggregated_dfs$two_weeks_aggregation)
-models_4_weeks = estimateModels(aggregated_dfs$four_weeks_aggregation)
-models_6_weeks = estimateModels(aggregated_dfs$six_weeks_aggregation)
-  #each object is a list with the three model types (rot, habits, jones) as the upper level
-  # the next lower level in each case are the four different model combinations estimated.  
-  # we are interested primiarliy in the X and YY models. 
-rotlist = estimated_models$rotlist
-habitlist = estimated_models$habitlist
-joneslist = estimatd_mdoels$joneslist
-
 
 # END of SCRIPT
 
