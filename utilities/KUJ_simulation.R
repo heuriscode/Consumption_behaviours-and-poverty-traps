@@ -22,6 +22,7 @@ KUJ_simulation = function(deterministic_income,
   #Initialise the weekly consumption matrix. 
   consumption_mat_KUJ = consumption_mat_KUJ_asymmetric = matrix(NA, nrow = n_weeks, ncol = n_households)
   unexpected_income_mat = actual_income - deterministic_income
+  closing_consumption_level_PIH = closing_consumption_level
   
   #Log tranform outputs, taking care of negative values
   ihs_func = function(x) {
@@ -58,13 +59,12 @@ KUJ_simulation = function(deterministic_income,
               savings_KUJ[j+1,i] = savings_KUJ[j,i]
               consumption_mat_KUJ[j,i] = consumption_expected
             }
-            
           }
         } else {
-          consumption_average = mean(consumption_mat_KUJ[j-1,])
+          consumption_parish = mean(deterministic_income_KUJ[j-1,]) # assume parish peers follow PIH with expected income
           for (i in 1:n_households){
             consumption_expected = deterministic_income_KUJ[j,i]
-            consumption_difference = consumption_average - consumption_mat_KUJ[j-1,i] #Difference between sample average in j-1 and household i in period j-1
+            consumption_difference = consumption_parish - consumption_mat_KUJ[j-1,i] #Difference between sample average in j-1 and household i in period j-1
             consumption_KUJ = gamma_mat[j,i] * consumption_difference
             residual = actual_income_KUJ[j,i] - consumption_expected - consumption_KUJ
             savings_KUJ[j+1,i] = savings_KUJ[j,i] + residual
@@ -80,7 +80,8 @@ KUJ_simulation = function(deterministic_income,
  
         }
       annual_asset_level_KUJ[y+1,] = savings_KUJ[j+1,] #Save the closing asset levels
-      closing_consumption_level[y,] = consumption_mat_KUJ[j,] #Save the average consumption to use for the next year timestep. 
+      closing_consumption_level[y,] =  consumption_mat_KUJ[j,] # save actual consumption for next year first period consumption for individual i
+      closing_consumption_level_PIH[y,] = deterministic_income_KUJ[j,] #Save the PIH consumption to use for the next year timestep. 
       
     } else {
       # Update expected income based on new asset levels.  
@@ -108,10 +109,10 @@ KUJ_simulation = function(deterministic_income,
       #Rerun the weekly timestep model
       for (j in 1:(n_weeks-1)) {
         if (j == 1){
-          consumption_average = mean(closing_consumption_level[y-1,]) # if the first week, retrieve the consumption average from the closing consumption matrix
+          consumption_parish = mean(closing_consumption_level_PIH[y-1,]) # if the first week, retrieve the consumption average from the closing consumption matrix
           for (i in 1:n_households){
             consumption_expected = deterministic_income_KUJ[j,i]
-            consumption_difference = consumption_average - closing_consumption_level[y-1,i] #Difference between sample average in j-1 and household i in period j-1
+            consumption_difference = consumption_parish - closing_consumption_level[y-1,i] #Difference between sample average in j-1 and household i in period j-1
             consumption_KUJ = gamma_mat[j,i] * consumption_difference
             residual = actual_income_KUJ[j,i] - consumption_expected - consumption_KUJ
             savings_KUJ[j+1,i] = savings_KUJ[j,i] + residual
@@ -125,10 +126,10 @@ KUJ_simulation = function(deterministic_income,
             }
           }
         } else {
-          consumption_average = mean(consumption_mat_KUJ[j-1,])
+          consumption_parish = mean(deterministic_income_KUJ[j-1,]) # assume parish peers follow PIH with expected income
           for (i in 1:n_households){
             consumption_expected = deterministic_income_KUJ[j,i]
-            consumption_difference = consumption_average - consumption_mat_KUJ[j-1,i] #Difference between sample average in j-1 and household i in period j-1
+            consumption_difference = consumption_parish - consumption_mat_KUJ[j-1,i] #Difference between sample average in j-1 and household i in period j-1
             consumption_KUJ = gamma_mat[j,i] * consumption_difference
             residual = actual_income_KUJ[j,i] - consumption_expected - consumption_KUJ
             savings_KUJ[j+1,i] = savings_KUJ[j,i] + residual
@@ -144,13 +145,14 @@ KUJ_simulation = function(deterministic_income,
           }
         }
         annual_asset_level_KUJ[y+1,] = savings_KUJ[j+1,] #Save the closing asset levels
-        closing_consumption_level[y,] = consumption_mat_KUJ[j,] #Save the average consumption to use for the next year timestep. 
+        closing_consumption_level[y,] =  consumption_mat_KUJ[j,] # save actual consumption for next year first period consumption for individual i
+        closing_consumption_level_PIH[y,] = deterministic_income_KUJ[j,] #Save the PIH consumption to use for the next year timestep. 
       }
     } 
   }  
  
   
-  # KUJ with assymetry. 
+  # KUJ with asymmetry. 
   # The loop is structured as follows:
   # For each year, individuals make a weekly consumption decision based on the specified behavioural model. 
   # These decisions influence assets levels where households either accumulate or fail to accumulate. 
@@ -175,11 +177,10 @@ KUJ_simulation = function(deterministic_income,
             
           }
         } else {
-          
-          consumption_average = mean(consumption_mat_KUJ_asymmetric[j-1,])
+          consumption_parish = mean(deterministic_income_KUJ_asymmetry[j-1,]) # assume parish peers follow PIH with expected income
           for (i in 1:n_households){
             consumption_expected = deterministic_income_KUJ_asymmetry[j,i]
-            consumption_difference = consumption_average - consumption_mat_KUJ_asymmetric[j-1,i] #Difference between sample average in j-1 and household i in period j-1
+            consumption_difference = consumption_parish - consumption_mat_KUJ_asymmetric[j-1,i] #Difference between sample average in j-1 and household i in period j-1
             if (consumption_difference > 0) {
             consumption_KUJ_asymmetry = gammapos_mat[j,i] * consumption_difference
             } else {
@@ -199,7 +200,8 @@ KUJ_simulation = function(deterministic_income,
           
         }
       annual_asset_level_KUJ_asymmetry[y+1,] = savings_KUJ_asymmetry[j+1,] #Save the closing asset levels
-      closing_consumption_level[y,] = consumption_mat_KUJ_asymmetric[j,] #Save the average consumption to use for the next year timestep. 
+      closing_consumption_level[y,] =  consumption_mat_KUJ_asymmetric[j,] # save actual consumption for next year first period consumption for individual i
+      closing_consumption_level_PIH[y,] = deterministic_income_KUJ[j,] #Save the PIH consumption to use for the next year timestep. 
       
     } else {
       # Update expected income based on new asset levels.  
@@ -227,10 +229,10 @@ KUJ_simulation = function(deterministic_income,
       #Rerun the weekly timestep model
       for (j in 1:(n_weeks-1)) {
         if (j == 1){
-          consumption_average = mean(closing_consumption_level[y-1,]) # if the first week, retrieve the consumption average from the closing consumption matrix
+          consumption_parish = mean(closing_consumption_level_PIH[y-1,]) # if the first week, retrieve the consumption average from the closing consumption matrix
           for (i in 1:n_households){
             consumption_expected = deterministic_income_KUJ_asymmetry[j,i]
-            consumption_difference = consumption_average - closing_consumption_level[y-1,i] #Difference between sample average in j-1 and household i in period j-1
+            consumption_difference = consumption_parish - closing_consumption_level[y-1,i] #Difference between sample average in j-1 and household i in period j-1
             if (consumption_difference > 0) {
               consumption_KUJ_asymmetry = gammapos_mat[j,i] * consumption_difference
             } else {
@@ -248,12 +250,10 @@ KUJ_simulation = function(deterministic_income,
             }
           }
         } else {
-          
-          consumption_average = mean(consumption_mat_KUJ_asymmetric[j-1,])
-          
+          consumption_parish = mean(deterministic_income_KUJ_asymmetry[j-1,]) # assume parish peers follow PIH with expected income
           for (i in 1:n_households){
             consumption_expected = deterministic_income_KUJ_asymmetry[j,i]
-            consumption_difference = consumption_average - consumption_mat_KUJ_asymmetric[j-1,i] #Difference between sample average in j-1 and household i in period j-1
+            consumption_difference = consumption_parish - consumption_mat_KUJ_asymmetric[j-1,i] #Difference between sample average in j-1 and household i in period j-1
             if (consumption_difference > 0) {
               consumption_KUJ_asymmetry = gammapos_mat[j,i] * consumption_difference
             } else {
@@ -273,7 +273,8 @@ KUJ_simulation = function(deterministic_income,
           }
         }
         annual_asset_level_KUJ_asymmetry[y+1,] = savings_KUJ_asymmetry[j+1,] #Save the closing asset levels
-        closing_consumption_level[y,] = consumption_mat_KUJ_asymmetric[j,] #Save the average consumption to use for the next year timestep. 
+        closing_consumption_level[y,] =  consumption_mat_KUJ_asymmetric[j,] # save actual consumption for next year first period consumption for individual i
+        closing_consumption_level_PIH[y,] = deterministic_income_KUJ_asymmetry[j,] #Save the PIH consumption to use for the next year timestep.  
       }
     } 
   } 

@@ -5,8 +5,8 @@
 
 runSimulations = function(bg_data, data, rotlist, joneslist, RESID_INC) {
   #Parameters
-  n_households = 1000
-  n_weeks = 52
+  n_households = 1000 #number of simulated households
+  n_weeks = 52 # weekly timesteps
   n_years = 25 # Number of years we observe the behaviour. 
   
   # INCOME is simulated as the sum of a deterministic income and a stochastic unexpected income draw. 
@@ -131,17 +131,12 @@ runSimulations = function(bg_data, data, rotlist, joneslist, RESID_INC) {
   for (i in 1:n_households) {
     betapos_mat[,i] = rnorm(1, betapos_mean, betapos_sd ) 
   }
-  
-  # # For Keeping up with the Joneses - randomly map households to parishes. 
-  # # Create a vector of parish assignments for households
-  # parish_assignments = rep(1:n_parishes, each = floor(n_households/n_parishes))
-  # remaining_households = n_households - length(parish_assignments)
-  # remaining_assignments = sample(1:n_parishes, remaining_households, replace = TRUE)
-  # parish_assignments = c(parish_assignments, remaining_assignments)
-  # parish_assignments = sample(parish_assignments)
+
   
   # Now retrieve gamma for parish level consumption
   # We derive parish level consumption in the function where consumption is determined based on PIH, ROT, and KUJ. 
+  # We assume all households belong to the same parish - as households are randomly drawn from the same distribution
+  # The mean of the entire sample will approach the mean of any assumed subsamples from this distribution anyway. 
   gamma_mat = matrix(NA, nrow = n_weeks, ncol = n_households)
   gamma_mean = summary(joneslist[[2]])$CoefTable[1,1]
   gamma_sd = summary(rotlist[[2]])$CoefTable[1,2]
@@ -157,7 +152,6 @@ runSimulations = function(bg_data, data, rotlist, joneslist, RESID_INC) {
   for (i in 1:n_households) {
     gammapos_mat[,i] = rnorm(1, gammapos_mean, gammapos_sd) 
   }
-  
   
   # Finally, set up empty annual asset and consumption matrices 
   # The annual asset matrix will be used to determine asset dynamics 
@@ -242,7 +236,7 @@ runSimulations = function(bg_data, data, rotlist, joneslist, RESID_INC) {
                 xlim =  c(-1, 8),
                 ylim =  c(-1, 8),
                 title = "KUJ with symmetry",
-                xtitle = "Log saving (lagged)",
+                xtitle = "Log saving (lagged t-3)",
                 ytitle = "Log savings (current)")
   
   asset_dyanmics(savings_KUJ_list[[2]], 

@@ -22,7 +22,7 @@ asset_dyanmics = function(annual_asset_level,
   
   lagged=rep(NA,length(current))
   for(i in 1:length(current)){
-    if (week_vec[i] <yearlag+1){
+    if (week_vec[i] < yearlag+1){
       lagged[i] = NA
     } else {
       lagged[i]=current[i-yearlag]
@@ -33,14 +33,11 @@ asset_dyanmics = function(annual_asset_level,
   polydat = data.frame(CURRENT = current,
                        LAGGED = lagged)
   polydat = na.omit(polydat)
-
-  # loess_est = loess(CURRENT~ LAGGED,data = polydat)
-  # lo.x = seq(quantile(polydat$LAGGED, probs = 0.0), quantile(polydat$LAGGED, probs = 1), length.out = nrow(polydat))
-  # lo.y = predict(loess_est, lo.x)
-  # plot(lo.y ~ lo.x, type = 'l', col = "red", xlim = xlim, ylim = ylim, xlab = xtitle, ylab = ytitle)
-  # abline(a = 0, b = 1, lwd = 1)
-  # title(title)
-# 
+  
+  if (title !="PIH with credit constraints"){
+    polydat = subset(polydat, polydat$CURRENT != polydat$LAGGED)
+  }
+  
   p = ggplot(data = polydat, aes(x = LAGGED, y = CURRENT)) +
     geom_smooth(method = "loess", color = "red", linetype = "dashed") +
     geom_abline(intercept = 0, slope = 1) +
@@ -49,7 +46,12 @@ asset_dyanmics = function(annual_asset_level,
     ylim(ylim) +
     xlab(xtitle) +
     ylab(ytitle) +
-    ggtitle(title)
+    ggtitle(title) + 
+    theme(
+      axis.text = element_text(size = 14),  
+      axis.title = element_text(size = 14),  
+      plot.title = element_text(size = 16)  
+    ) 
 
   print(p)
   ggsave(filename = paste("Simulation_", title, ".jpg", sep = ""), p)
