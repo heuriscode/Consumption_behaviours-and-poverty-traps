@@ -25,9 +25,13 @@ library(plm)         # mean group estimators for panel data
 library(ggplot2)     # For simulation plots
 
 #load scripts and programs
-source("utilities\\getDWforPGM.R")  #manual DW test for MG estimators
-source("utilities\\getFSTATforPGM.R")  #manual F-test for regression restrictions for MG estimators
-source("utilities\\getplmfitted.R")  #manual predicted and residuals series calculator for MG estimators as 'predict()' doesn't work for those.
+source(here("utilities","getDWforPGM.R"))  #manual DW test for MG estimators
+source(here("utilities","getFSTATforPGM.R"))  #manual F-test for regression restrictions for MG estimators
+source(here("utilities","getplmfitted.R"))  #manual predicted and residuals series calculator for MG estimators as 'predict()' doesn't work for those.
+source(here("utilities","get_outmat_ROT_08_12_20.R"))
+source(here("utilities","get_outmat_HABIT_08_12_20.R"))
+source(here("utilities","get_outmat_JONES_08_12_20.R"))
+source(here("utilities","expected_income_linear_middle.R"))
 
 ############################################
 #NOTES :
@@ -35,7 +39,6 @@ source("utilities\\getplmfitted.R")  #manual predicted and residuals series calc
 # clustering is not relevant for the MG family of estimators: heteroskedasticity in response is already accounted for
 #     directly in the estimation process itself (individual-level estimates that are averaged along with their respective
 #     standard errors)
-
 
 ############################################
 #VAR NAMES IN DIARY DATA:
@@ -160,6 +163,10 @@ bg_data$VILLAGE=as.factor(droplevels(bg_data$VILLAGE))       #RESET VILLAGE LEVE
 bg_data$PARISH=as.factor(droplevels(bg_data$PARISH))       #RESET VILLAGE LEVELS
 bg_data$SUBCOUNTY=as.factor(droplevels(bg_data$SUBCOUNTY))       #RESET  LEVELS
 
+## Also remove ID 8002 and 3412 as having no variation in parish level discretionary consumption
+data = data[-which(data$SURVEY_ID==8002 | data$SURVEY_ID==3412),]
+bg_data = bg_data[-which(bg_data$ID==8002 | bg_data$ID==3412),]
+
 ###########################################################################
 #  CALCULATE VILLAGE-LEVEL MEASURE OF INCOME FOR 'KEEPING UP' HYPOTHESIS
 ###########################################################################
@@ -207,6 +214,7 @@ bg_data$SUBCOUNTY=as.factor(droplevels(bg_data$SUBCOUNTY))       #RESET  LEVELS
 INCOME = data$MONEY_EARNT_PICKING + data$MONEY_EARNT_COFF_SALES + data$MONEY_EARNT_PARCHMENT + data$MONEY_EARNT_OTHER_WORK +
   data$MONEY_EARNT_GOVT_NGO + replace(data$GAMBLING,is.na(data$GAMBLING),0)
 
+#All consumption
 CONSUMPTION = data$EXPENSES_FOOD +
   data$EXPENSES_FARM_TOOLS +
   data$EXPENSES_FARM_INPUTS +
@@ -218,11 +226,17 @@ CONSUMPTION = data$EXPENSES_FOOD +
   data$EXPENSES_TRANSPORT +
   data$EXPENSES_OTHER
 
+#Discretionary consumption
 DISC_CONS = data$MONEY_WENT_FRIENDS +
   data$EXPENSES_ALCOHOL_CIGARETTES +
   data$EXPENSES_TRANSPORT +
   data$EXPENSES_GAMBLING  +
   data$EXPENSES_OTHER
+
+#'flexible' consumption (discretionary + other consumption that can be delayed)
+FLEX_CONS = DISC_CONS +
+            data$EXPENSES_FARM_INPUTS +
+            data$EXPENSES_HOME_CONSUMABLES
 
 ###############################################################################
 #  Use natural logarithm with a small addition (~0.35 AUD) for zero obs:
@@ -236,6 +250,7 @@ SAV_RATE=NET_SAVINGS/INCOME
 LN_INCOME=log((INCOME+1000)/1000)
 LN_CONSUMPTION=log((CONSUMPTION+1000)/1000)
 LN_DISC_CONS=log((DISC_CONS+1000)/1000)
+LN_FLEX_CONS=log((FLEX_CONS+1000)/1000)
 
 #use inverse hyperbolic sin to allow non-negative values and approximate a log.
 invhypsin=function(x){
@@ -245,91 +260,110 @@ invhypsin=function(x){
 INC_IHS = invhypsin(INCOME/1000)
 CONS_IHS = invhypsin(CONSUMPTION/1000)
 DISC_IHS = invhypsin(DISC_CONS/1000)
+FLEX_IHS = invhypsin(FLEX_CONS/1000)
 
 cor(LN_INCOME,INC_IHS)  #0.998
 cor(LN_CONSUMPTION,CONS_IHS)  #0.998
 cor(LN_DISC_CONS,DISC_IHS)  #0.998
+cor(LN_FLEX_CONS,FLEX_IHS)  #0.998
 
 #set main vars to the IHS version for 2022 review version
 INCOME = INC_IHS
 CONSUMPTION = CONS_IHS
 DISC_CONS = DISC_IHS
+FLEX_CONS = FLEX_IHS
 DISC_TO_TOT_CONS_RAT = DISC_CONS/CONSUMPTION
+FLEX_TO_TOT_CONS_RAT = FLEX_CONS/CONSUMPTION
 DISC_TO_TOT_CONS_RAT = replace(DISC_TO_TOT_CONS_RAT,CONSUMPTION==0,1)
+FLEX_TO_TOT_CONS_RAT = replace(FLEX_TO_TOT_CONS_RAT,CONSUMPTION==0,1)
 
 #CALCULATE PARISH-LEVEL AVERAGES AND VARIANCE
-PARISH=PARISH_CONS=PARISH_INC=VAR_PARISH_CONS=VAR_PARISH_INC=DIFF_PARISH_CONS=DIFF_PARISH_INC=PARISH_DISC=DIFF_PARISH_DISC=c()
+PARISH=PARISH_CONS=PARISH_INC=VAR_PARISH_CONS=VAR_PARISH_INC=DIFF_PARISH_CONS=DIFF_PARISH_INC=c()
+PARISH_DISC=DIFF_PARISH_DISC=PARISH_FLEX=DIFF_PARISH_FLEX = c()
+
 for(i in 1:nrow(data)){
   #First get parish vector to add to data allowing clustered standard errors
   PARISH[i] = bg_data$PARISH[bg_data$ID==data$SURVEY_ID[i]]
-  
+
   #get other IDs from Parish
   parish=bg_data$PARISH[bg_data$ID==data$SURVEY_ID[i]]
   parish_vec=bg_data$ID[which(bg_data$PARISH %in% parish)]
   parish_vec=parish_vec[parish_vec != data$SURVEY_ID[i]]
   #get week number
   weeknum=data$WEEK[i]
-  
+
   #get CONSUMPTION for village:
   CONS_PARISH=CONSUMPTION[which(data$SURVEY_ID %in% parish_vec & data$WEEK %in% weeknum)]
   INC_PARISH=INCOME[which(data$SURVEY_ID %in% parish_vec & data$WEEK %in% weeknum)]
   DISC_PARISH=DISC_CONS[which(data$SURVEY_ID %in% parish_vec & data$WEEK %in% weeknum)]
+  FLEX_PARISH=FLEX_CONS[which(data$SURVEY_ID %in% parish_vec & data$WEEK %in% weeknum)]
   #enter average value
   PARISH_CONS[i]=mean(CONS_PARISH)
   PARISH_INC[i]=mean(INC_PARISH)
   VAR_PARISH_CONS[i]=var(CONS_PARISH)
   VAR_PARISH_INC[i]=var(INC_PARISH)
   PARISH_DISC[i]=mean(DISC_PARISH)
-  
+  PARISH_FLEX[i]=mean(FLEX_PARISH)
+
   DIFF_PARISH_DISC[i]=PARISH_DISC[i]-DISC_CONS[i]
+  DIFF_PARISH_FLEX[i]=PARISH_FLEX[i]-FLEX_CONS[i]
   DIFF_PARISH_CONS[i]=PARISH_CONS[i]-CONSUMPTION[i]
   DIFF_PARISH_INC[i]=PARISH_INC[i]-INCOME[i]
-}
+  }
 
 
 IDvec=levels(as.factor(data$SURVEY_ID))
 
 #CHECK TOTAL CONSUMPTION AND INCOME ACROSS PERIOD:
-TOTCONS=TOTDISC_CONS=TOTINC=TOTSAV=c()
+TOTCONS=TOTDISC_CONS=TOTFLEX_CONS=TOTINC=TOTSAV=c()
 for(i in 1:length(IDvec)){
   TOTCONS[i]=sum(CONSUMPTION[data$SURVEY_ID==IDvec[i]],na.rm=TRUE)
   TOTINC[i]=sum(INCOME[data$SURVEY_ID==IDvec[i]],na.rm=TRUE)
   TOTDISC_CONS[i]=sum(DISC_CONS[data$SURVEY_ID==IDvec[i]],na.rm=TRUE)
+  TOTFLEX_CONS[i]=sum(FLEX_CONS[data$SURVEY_ID==IDvec[i]],na.rm=TRUE)
   TOTSAV[i]=sum(NET_SAVINGS[data$SURVEY_ID==IDvec[i]],na.rm=TRUE)
-}
+  }
 
 
 #get a summary of the data first:
 data_summary_mat=rbind(c(quantile(exp(INCOME),probs=c(0,0.25,0.5,0.75,1),na.rm=TRUE),
-                         mean(exp(INCOME)),
-                         sqrt(var(exp(INCOME)))),
+                       mean(exp(INCOME)),
+                       sqrt(var(exp(INCOME)))),
                        c(quantile(exp(CONSUMPTION),probs=c(0,0.25,0.5,0.75,1),na.rm=TRUE),
-                         mean(exp(CONSUMPTION)),
-                         sqrt(var(exp(CONSUMPTION)))),
+                       mean(exp(CONSUMPTION)),
+                       sqrt(var(exp(CONSUMPTION)))),
                        c(quantile(exp(DISC_CONS),probs=c(0,0.25,0.5,0.75,1),na.rm=TRUE),
-                         mean(exp(DISC_CONS)),
-                         sqrt(var(exp(DISC_CONS))))
-)
+                       mean(exp(DISC_CONS)),
+                       sqrt(var(exp(DISC_CONS)))),
+                       c(quantile(exp(FLEX_CONS),probs=c(0,0.25,0.5,0.75,1),na.rm=TRUE),
+                       mean(exp(FLEX_CONS)),
+                       sqrt(var(exp(FLEX_CONS))))
+                       )
 #data_summary_mat[,1]=0 #replace 100 shillings for logarithm with 0
 colnames(data_summary_mat)=c("Minimum","25th percentile","Median","75th percentile","Maximum","Mean","Std. Deviation")
-rownames(data_summary_mat)=c("INCOME","CONSUMPTION TOTAL","DISCRETIONARY CONSUMPTION")
+rownames(data_summary_mat)=c("INCOME","CONSUMPTION TOTAL","DISCRETIONARY CONSUMPTION","FLEXIBLE CONSUMPTION")
 write.table(data_summary_mat,"results\\data summary.csv",sep=",")
 
 WEEKS=max(data$WEEK)
+
 
 ################################
 #CREATE PANEL DATA FRAME
 ####################################
 
 dat=data.frame(data$SURVEY_ID,PARISH,data$WEEK,
-               INCOME,CONSUMPTION,DISC_CONS,DISC_TO_TOT_CONS_RAT,
-               PARISH_CONS,PARISH_INC,PARISH_DISC,
-               DIFF_PARISH_CONS,DIFF_PARISH_INC,DIFF_PARISH_DISC,
+               INCOME,CONSUMPTION,
+               DISC_CONS,DISC_TO_TOT_CONS_RAT,
+               FLEX_CONS,FLEX_TO_TOT_CONS_RAT,
+               PARISH_CONS,PARISH_INC,PARISH_DISC,PARISH_FLEX,
+               DIFF_PARISH_CONS,DIFF_PARISH_INC,DIFF_PARISH_DISC,DIFF_PARISH_FLEX,
                VAR_PARISH_CONS,VAR_PARISH_INC)
 names(dat)=c("ID","PARISH","WEEK",
-             "INC","CONS","DISC","DISC_TO_TOT_CONS_RAT",
-             "PARISH_CONS","PARISH_INC","PARISH_DISC",
-             "DIFF_PARISH_CONS","DIFF_PARISH_INC","DIFF_PARISH_DISC",
+             "INC","CONS",
+             "DISC","DISC_TO_TOT_CONS_RAT",
+             "FLEX","FLEX_TO_TOT_CONS_RAT",
+             "PARISH_CONS","PARISH_INC","PARISH_DISC","PARISH_FLEX",
+             "DIFF_PARISH_CONS","DIFF_PARISH_INC","DIFF_PARISH_DISC","DIFF_PARISH_FLEX",
              "VAR_PARISH_CONS","VAR_PARISH_INC")
 
 pdat=pdata.frame(dat,index=c("ID","WEEK"))
@@ -337,103 +371,61 @@ pdat=pdata.frame(dat,index=c("ID","WEEK"))
 INCPOS=replace(pdat$INC,pdat$INC<0,0)
 CONSPOS=replace(pdat$CONS,pdat$CONS<0,0)
 DISCPOS=replace(pdat$DISC,pdat$DISC<0,0)
+FLEXPOS=replace(pdat$FLEX,pdat$FLEX<0,0)
 dINCPOS=replace(diff(pdat$INC),diff(pdat$INC)<0,0)
 dCONSPOS=replace(diff(pdat$CONS),diff(pdat$CONS)<0,0)
 dDISCPOS=replace(diff(pdat$DISC),diff(pdat$DISC)<0,0)
+dFLEXPOS=replace(diff(pdat$FLEX),diff(pdat$FLEX)<0,0)
 PARISH_CONS_POS=replace(diff(pdat$PARISH_CONS),diff(pdat$PARISH_CONS)<0,0)
 PARISH_DISC_POS=replace(diff(pdat$PARISH_DISC),diff(pdat$PARISH_DISC)<0,0)
+PARISH_FLEX_POS=replace(diff(pdat$PARISH_FLEX),diff(pdat$PARISH_FLEX)<0,0)
 PARISH_INC_POS=replace(diff(pdat$PARISH_INC),diff(pdat$PARISH_INC)<0,0)
 DIFF_PARISH_CONS_POS=replace(pdat$DIFF_PARISH_CONS,pdat$DIFF_PARISH_CONS<0,0)
 DIFF_PARISH_DISC_POS=replace(diff(pdat$DIFF_PARISH_DISC),diff(pdat$DIFF_PARISH_DISC)<0,0)
+DIFF_PARISH_FLEX_POS=replace(diff(pdat$DIFF_PARISH_FLEX),diff(pdat$DIFF_PARISH_FLEX)<0,0)
 
-dat=data.frame(dat,INCPOS,CONSPOS,DISCPOS,dINCPOS,dCONSPOS,dDISCPOS,
-               PARISH_CONS_POS,PARISH_DISC_POS,PARISH_INC_POS,DIFF_PARISH_CONS_POS,DIFF_PARISH_DISC_POS)
+dat=data.frame(dat,INCPOS,CONSPOS,DISCPOS,FLEXPOS,dINCPOS,dCONSPOS,dDISCPOS,dFLEXPOS,
+               PARISH_CONS_POS,PARISH_DISC_POS,PARISH_FLEX_POS,PARISH_INC_POS,DIFF_PARISH_CONS_POS,DIFF_PARISH_DISC_POS,DIFF_PARISH_FLEX_POS)
 pdat=pdata.frame(dat,index=c("ID","WEEK"))
 
 
 #############################################################
 #  GET EXPECTED INCOME BASED ON EXOGENOUS VARIABLES
 #############################################################
-eq_exp_inc=INC~lag(INC,1:2)+lag(CONS,1:2)+lag(DISC_TO_TOT_CONS_RAT,1)+lag(PARISH_INC,1:2)+lag(PARISH_CONS,1:2)
+
 #diff(INC) lags are known to the household and have been experienced so are exogenous and known
 #mean parish income (not including the household) is exogenous and is relatively easily observed by most households
 #the DISC_TO_TOT_CONS_RAT term is a ratio of discretionary consumption to total consumption (lagged) - an indicator of their previous consumption patterns/preferences
-
-#use the mg, NOT the ccemg model as common correlated effects are unknown to households before occurence
-predinc_reg=pmg(eq_exp_inc,data=pdat,model="mg")
-#multiple r-squared = 0.46
 
 ### Note:
 #  predict function for MG type models uses *individual* level models and associated predictions
 #  so heterogeneity in expectations is also accounted for using these models
 #  it is better to allow for some DF losses as this allows for some HH to have great 'rationality' over others (e.g. include some variables that are, on average, insignificant)
 #  this also implies that the use of a trend term is only appropriate if income is smooth - otherwise it will over-smooth predicted income. Thus, leave out as will be driven by outliers
-#      such as random higher consumption at the start, middle, or end of the sample period would generate decreasing, inverted-U, or increasing expected income predictions.
+#  such as random higher consumption at the start, middle, or end of the sample period would generate decreasing, inverted-U, or increasing expected income predictions.
 
-### lagged consumption (both), lagged ratio of disc to total cons (both) and lagged parish consumption (second lag) are all insignificant but evidence that they improve the model
-# joint f-test:
-#   with no lagged PARISH_CON:  F-stat ~ 1.3
-#   OR no DISC_TO_CONS_RAT:  F-stat ~ 1.3
-# so can't reject restrictions individually but not a strong rejection
-# 28% of households involved a strong rejection of these restrictions (<5% p-value)
-# so good evidence that, for some households, there is a stronger predictability for household income.
+#run three different expected income functions:
+#  1. A high-predictive power one (gams function)
+#  2. A target predictive one (using linear estimator with all components)
+#  3. A low-predictive power one (linear estimator with fewer components)
 
-#F-test
-#Fstat = getFSTATforPGM(predinc_reg_RESTRICT,predinc_reg,pdat)
+### Note2: These are implemented as different main scripts - see main folder and run these separately.
 
+res = get_linear_middle()
 
-#DW-test - provides vector by household, take mean to get mean DW test result
-DWstat = round(pbnftest(predinc_reg)$statistic,2)
-BNF=round(pbnftest(predinc_reg,test="bnf")$statistic,2)
-LBI=round(pbnftest(predinc_reg,test="lbi")$statistic,2)
-
-
-#generate results matrix
-len=length(predinc_reg$coef)
-predinc_mat=matrix(NA,nrow=(8+len),ncol=3)
-predinc_mat[1:len,]=round(summary(predinc_reg)$Coef[,-3],3)
-
-#manually enter values for R2, #hh, #time, #total, and DWtest because I'm feeling brain-lazy for thinking how to code this.
-predinc_mat[(len+2):(len+8),1]=c(0.54,423,22,9306,DWstat,BNF,LBI)
-
-
-### CHECK AND REDO FOR THE FINAL REGRESSSION ###
-rownames(predinc_mat)=c("Intercept","L1(Income)","L2(Income)",
-                        "L1(Consumption)","L2(Consumption)",
-                        "L1 Own Discretionary/Total Consumption Ratio",
-                        "L1(Parish mean income)","L2(Parish mean income)",
-                        "L1(Parish mean consumption)","L2(Parish mean consumption)",
-                        "",
-                        "R-squared","# households","Time periods used","Total # observations",
-                        "DW statistic","Barghava et al Durbin Watson Statistic","Baltagi-Wu LBI statistic")
-
-colnames(predinc_mat)=c("Estimate","Standard Error","P-value")
-
-write.table(predinc_mat,"results\\predicted income regression.csv",sep=",")
-
-#get fitted values and residuals
-fittedlist=getplmfitted(predinc_reg,pdat)
-EXPECT_INC=fittedlist[[1]]  #this represents the predictable portion of income
-RESID_INC=fittedlist[[2]]   #this represents the unexpected portion of income CALCULATED AS OBSERVED MINUS EXPECTED!!!
-
-#get differences for the pos components manually due to plm limitations
-dPOS_EXPINC=dPOS_UNEXPINC=rep(NA,nrow(dat))
-for(i in 1:nrow(dat)){
-  if(i==1){next}
-  if(dat$ID[i]!=dat$ID[(i-1)]){next}
-  expdiff=EXPECT_INC[i]-EXPECT_INC[(i-1)]
-  unexpdiff=RESID_INC[i]-RESID_INC[(i-1)]
-  dPOS_EXPINC[i]=replace(expdiff,expdiff<0,0)
-  dPOS_UNEXPINC[i]=replace(unexpdiff,unexpdiff<0,0)
-}
-
-POS_EXPINC=replace(EXPECT_INC,EXPECT_INC<0,0)
-POS_UNEXPINC=replace(RESID_INC,RESID_INC<0,0)
-NEG_EXPINC=replace(EXPECT_INC,EXPECT_INC>0,0)
-NEG_UNEXPINC=replace(RESID_INC,RESID_INC>0,0)
-dCONS = diff(pdat$CONS)
-
-pdat=pdata.frame(data.frame(pdat,"EXPECTED_INC"=EXPECT_INC,"UNEXPECTED_INC"=RESID_INC,"POS_EXPINC"=NEG_EXPINC,"POS_UNEXPINC"=NEG_UNEXPINC,"POS_EXPINC"=POS_EXPINC,"POS_UNEXPINC"=POS_UNEXPINC,"dPOS_EXPINC"=dPOS_EXPINC,"dPOS_UNEXPINC"=dPOS_UNEXPINC,"dCONS"=dCONS),index=c("ID","WEEK"))
+## Create different pdata frames for each of the different expected income models
+pdat=pdata.frame(data.frame(
+    dat,"EXPECTED_INC"=res$EXPECT_INC,
+    "UNEXPECTED_INC"=res$RESID_INC,
+    "POS_EXPINC"=res$NEG_EXPINC,
+    "POS_UNEXPINC"=res$NEG_UNEXPINC,
+    "POS_EXPINC"=res$POS_EXPINC,
+    "POS_UNEXPINC"=res$POS_UNEXPINC,
+    "dPOS_EXPINC"=res$dPOS_EXPINC,
+    "dPOS_UNEXPINC"=res$dPOS_UNEXPINC
+    ),
+    index=c("ID","WEEK")
+)
 
 ###################################
 #  HISTOGRAMS FOR CONSUMPTION/INCOME
@@ -489,9 +481,36 @@ LBI_U=round(pbnftest(reg_persistenceUNEXPINC,test="lbi")$statistic,2)
 
 
 modlist=list(reg_persistenceINC,reg_persistenceEXPINC,reg_persistenceUNEXPINC)
-modelstatmat=cbind(c(0.58,423,19,8037,DWstat_I,BNF_I,LBI_I),
-                   c(0.59,423,17,7191,DWstat_E,BNF_E,LBI_E),
-                   c(0.66,423,17,7191,DWstat_U,BNF_U,LBI_U))
+modelstatmat=cbind(
+  c(
+      summary(modlist[[1]])$rsqr,                                         #rsqr
+      (dim(modlist[[1]]$indcoef)[2]),                                     #num households
+      length(modlist[[1]]$fitted.values)/(dim(modlist[[1]]$indcoef)[2]),  #time periods used
+      length(modlist[[1]]$fitted.values),                                 #total observations used
+      DWstat_I,                                                           #Durbin Watson statistic
+      BNF_I,                                                              #BNF statistic
+      LBI_I                                                               #LBI statistic
+    ),                                                             
+  c(
+      summary(modlist[[2]])$rsqr,                                         #rsqr
+      (dim(modlist[[2]]$indcoef)[2]),                                     #num households
+      length(modlist[[2]]$fitted.values)/(dim(modlist[[2]]$indcoef)[2]),  #time periods used
+      length(modlist[[2]]$fitted.values),                                 #total observations used
+      DWstat_E,                                                           #Durbin Watson statistic
+      BNF_E,                                                              #BNF statistic
+      LBI_E                                                               #LBI statistic
+    ), 
+  c(
+      summary(modlist[[3]])$rsqr,                                         #rsqr
+      (dim(modlist[[3]]$indcoef)[2]),                                     #num households
+      length(modlist[[3]]$fitted.values)/(dim(modlist[[3]]$indcoef)[2]),  #time periods used
+      length(modlist[[3]]$fitted.values),                                 #total observations used
+      DWstat_U,                                                           #Durbin Watson statistic
+      BNF_U,                                                              #BNF statistic
+      LBI_U                                                               #LBI statistic
+    ) 
+)
+
 for(rrr in 1:5){
   for(ccc in 1:length(modlist)){
     mod=summary(modlist[[ccc]])$Coef
@@ -504,7 +523,7 @@ persist_mat[7:13,1]=modelstatmat[,1]
 persist_mat[7:13,2]=modelstatmat[,2]
 persist_mat[7:13,3]=modelstatmat[,3]
 
-write.table(persist_mat,"results\\income persistence results.csv",sep=",")
+write.table(persist_mat,"results\\income persistence results_MAIN.csv",sep=",")
 
 ################################
 #CAUSALITY CHECK:
@@ -543,7 +562,7 @@ rownames(caus_mat)=c("Intercept","Lag(diff(Consumption))","Lag(diff(Expected Inc
                      "DW-statistic","Baltagi-Wu LBI statistic","Barghava et al Durbin Watson Statistic")
 colnames(caus_mat)=c("Estimate","Standard Error")
 
-write.table(caus_mat,"results\\causality results.csv",sep=",")
+write.table(caus_mat,"results\\causality results_MAIN.csv",sep=",")
 
 ##################################################
 # MAIN regressions TOTAL CONSUMPTION
@@ -579,11 +598,12 @@ eq_jones_asym_DISC_CONS=diff(DISC)~0+lag(DIFF_PARISH_DISC)+lag(DIFF_PARISH_DISC_
 eq_jones_rot_habit_asym_DISC_CONS=diff(DISC)~0+lag(DIFF_PARISH_CONS)+lag(DIFF_PARISH_CONS_POS)+lag(diff(DISC),1)+diff(EXPECTED_INC)+diff(UNEXPECTED_INC)
 
 #estimate models
-source(here("Utilities", "estimateModels.R"))
-estimated_models = estimateModels()
+source(here("utilities","estimateModels.R"))
+estimated_models = estimateModels(reg_df=pdat)
 
 rotlist = estimated_models$rotlist
 habitlist = estimated_models$habitlist
+joneslist = estimated_models$joneslist
 joneslist = estimated_models$joneslist
 
 ###############################
@@ -609,9 +629,9 @@ source("utilities\\get_outmat_JONES_08_12_20.R")
 outmat_jones=get_outmat_JONES(joneslist,intercept=FALSE)
 
 #write tables
-write.table(outmat_rot,"results\\RoT results full sample.csv",sep=",",row.names=TRUE)
-write.table(outmat_habit,"results\\Habits results full sample.csv",sep=",",row.names=TRUE)
-write.table(outmat_jones,"results\\Jones results full sample.csv",sep=",",row.names=TRUE)
+write.table(outmat_rot,"results\\RoT results full sample_MAIN.csv",sep=",",row.names=TRUE)
+write.table(outmat_habit,"results\\Habits results full sample_MAIN.csv",sep=",",row.names=TRUE)
+write.table(outmat_jones,"results\\Jones results full sample_MAIN.csv",sep=",",row.names=TRUE)
 
 ###############################
 #   Simulations
@@ -621,33 +641,6 @@ write.table(outmat_jones,"results\\Jones results full sample.csv",sep=",",row.na
 
 source("utilities\\runSimulations.R")
 simulation_list = runSimulations(bg_data, data, rotlist, joneslist, RESID_INC)
-
-###############################
-# Aggregation concerns
-###############################
-
-## this component undertakes a number of tests to consider whether 
-#  aggregation across time induces a tendency to accept the null 
-#  hypothesis that the PIH is correct/sufficient
-source(here("utilities","getAggregationDataframes.R"))
-
-#run aggregation script
-aggregated_dfs = getAggregatedDataframes()
-  #returns a list:
-    #first level elements are the three aggregation levels (2, 4, 6 weeks)
-    #second level are the models
-
-#run estimation of core models for each aggregation data frame
-models_2_weeks = estimateModels(aggregated_dfs$two_weeks_aggregation)
-models_4_weeks = estimateModels(aggregated_dfs$four_weeks_aggregation)
-models_6_weeks = estimateModels(aggregated_dfs$six_weeks_aggregation)
-  #each object is a list with the three model types (rot, habits, jones) as the upper level
-  # the next lower level in each case are the four different model combinations estimated.  
-  # we are interested primiarliy in the X and YY models. 
-rotlist = estimated_models$rotlist
-habitlist = estimated_models$habitlist
-joneslist = estimatd_mdoels$joneslist
-
 
 # END of SCRIPT
 

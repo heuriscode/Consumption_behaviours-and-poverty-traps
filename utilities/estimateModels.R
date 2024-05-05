@@ -1,8 +1,6 @@
 ## core estimation function
 
-estimateModels = function(){
-  
-    reg_df = pdat
+estimateModels = function(reg_df){
 
     ## estimate models
     rot_asym_CONS=pmg(eq_rot_asym_CONS,model="cmg",data=reg_df)
@@ -16,13 +14,13 @@ estimateModels = function(){
     habit_rot_jones_asym_DISC_CONS=pmg(eq_habit_rot_jones_asym_DISC_CONS,model="cmg",data=reg_df)
 
     #note these two hh both have all zero DIFF_PARISH_CONS_POS so generate NA for that - remove those two hh
-    jones_asym_CONS=pmg(eq_jones_asym_CONS,model="cmg",data = subset(reg_df,reg_df$ID!=8002 & reg_df$ID!=3412))
-    jones_rot_habit_asym_CONS=pmg(eq_jones_rot_habit_asym_CONS,model="cmg",data = subset(reg_df, reg_df$ID!=8002 & reg_df$ID!=3412))
-
-    #note one hh both has all zero DIFF_PARISH_DISC_CONS_POS so generate NA for that - remove 
-    jones_asym_DISC_CONS=pmg(eq_jones_asym_DISC_CONS,model="cmg", data = subset(reg_df, reg_df$ID!=8002))
-    jones_rot_habit_asym_DISC_CONS=pmg(eq_jones_rot_habit_asym_DISC_CONS,model="cmg", data = subset(reg_df, reg_df$ID!=8002))
+    jones_asym_CONS=pmg(eq_jones_asym_CONS,model="cmg",data=reg_df)
+    jones_rot_habit_asym_CONS=pmg(eq_jones_rot_habit_asym_CONS,model="cmg",data=reg_df)
     
+    #note one hh both has all zero DIFF_PARISH_DISC_CONS_POS so generate NA for that - remove 
+    jones_asym_DISC_CONS=pmg(eq_jones_asym_DISC_CONS,model="cmg",data=reg_df)
+    jones_rot_habit_asym_DISC_CONS=pmg(eq_jones_rot_habit_asym_DISC_CONS,model="cmg",data=reg_df)
+
     rotlist=list(rot_asym_CONS,rot_habit_jones_asym_CONS,
              rot_asym_DISC_CONS,rot_habit_jones_asym_DISC_CONS)
 
