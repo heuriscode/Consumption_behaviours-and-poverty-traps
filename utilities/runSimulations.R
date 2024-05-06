@@ -213,7 +213,7 @@ runSimulations = function(bg_data, data, rotlist, joneslist, RESID_INC) {
                  xlim = c(-1, 8),
                  ylim = c(-1, 8),
                  title = "ROT with asymmetry",
-                 xtitle = "Log saving (lagged t-3)",
+                 xtitle = "Log saving (lagged)",
                  ytitle = "Log savings (current)")
 
   # Keeping up with the Joneses. 
@@ -274,8 +274,8 @@ runSimulations = function(bg_data, data, rotlist, joneslist, RESID_INC) {
   
   asset_dyanmics(savings_All_list[[2]], 
                  yearlag = 3,
-                 xlim = c(min(savings_All_list[[1]]), 8),
-                 ylim = c(min(savings_All_list[[1]]), 8),
+                 xlim = c(-1, 8),
+                 ylim = c(-1, 8),
                  title = "ROT and KUJ with asymmetry",
                  xtitle = "Log saving (lagged t-3)",
                  ytitle = "Log savings (current)")

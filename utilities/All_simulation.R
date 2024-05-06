@@ -25,6 +25,7 @@ All_simulation = function(deterministic_income,
   #Initialise the weekly consumption matrix. 
   consumption_mat_All = consumption_mat_All_asymmetric = matrix(NA, nrow = n_weeks, ncol = n_households)
   unexpected_income_mat = actual_income - deterministic_income
+  closing_consumption_level_PIH = closing_consumption_level
   
   #Log tranform outputs, taking care of negative values
   ihs_func = function(x) {
@@ -68,7 +69,7 @@ All_simulation = function(deterministic_income,
           }
         } else {
           
-          consumption_average = mean(consumption_mat_All[j-1,])
+          consumption_average =  mean(deterministic_income_All[j-1,]) # assume parish peers follow PIH with expected income
           
           for (i in 1:n_households){
             #PIH
@@ -94,6 +95,7 @@ All_simulation = function(deterministic_income,
         }
       annual_asset_level_All[y+1,] = savings_All[j+1,] #Save the closing asset levels
       closing_consumption_level[y,] = consumption_mat_All[j,] #Save the average consumption to use for the next year timestep. 
+      closing_consumption_level_PIH[y,] = deterministic_income_All[j,] #Save the PIH consumption to use for the next year timestep. 
       
     } else {
       
@@ -123,7 +125,7 @@ All_simulation = function(deterministic_income,
       for (j in 1:(n_weeks-1)) {
         if (j == 1){
           
-          consumption_average = mean(closing_consumption_level[y-1,]) # if the first week, retrieve the consumption average from the closing consumption matrix
+          consumption_average = mean(closing_consumption_level_PIH[y-1,]) # if the first week, retrieve the consumption average from the closing consumption matrix
           
           for (i in 1:n_households){
             #PIH
@@ -148,7 +150,7 @@ All_simulation = function(deterministic_income,
           
         } else {
           
-          consumption_average = mean(consumption_mat_All[j-1,])
+          consumption_average = mean(deterministic_income_All[j-1,]) # assume parish peers follow PIH with expected income
           
           for (i in 1:n_households){
             #PIH
@@ -174,6 +176,7 @@ All_simulation = function(deterministic_income,
         }
         annual_asset_level_All[y+1,] = savings_All[j+1,] #Save the closing asset levels
         closing_consumption_level[y,] = consumption_mat_All[j,] #Save the average consumption to use for the next year timestep. 
+        closing_consumption_level_PIH[y,] = deterministic_income_All[j,] #Save the PIH consumption to use for the next year timestep. 
       }
     } 
   }  
@@ -214,7 +217,7 @@ All_simulation = function(deterministic_income,
           }
         } else {
           
-          consumption_average = mean(consumption_mat_All_asymmetric[j-1,])
+          consumption_average = mean(deterministic_income_All_asymmetry[j-1,])
           for (i in 1:n_households){
             #PIH
             consumption_expected = deterministic_income_All_asymmetry[j,i]
@@ -247,7 +250,7 @@ All_simulation = function(deterministic_income,
       
       annual_asset_level_All_asymmetry[y+1,] = savings_All_asymmetry[j+1,] #Save the closing asset levels
       closing_consumption_level[y,] = consumption_mat_All_asymmetric[j,] #Save the average consumption to use for the next year timestep. 
-      
+      closing_consumption_level_PIH[y,] = deterministic_income_All_asymmetry[j,] #Save the PIH consumption to use for the next year timestep. 
     } else {
       
       # Update expected income based on new asset levels.  
@@ -275,7 +278,7 @@ All_simulation = function(deterministic_income,
       #Rerun the weekly timestep model
       for (j in 1:(n_weeks-1)) {
         if (j == 1){
-          consumption_average = mean(closing_consumption_level[y-1,]) # if the first week, retrieve the consumption average from the closing consumption matrix
+          consumption_average = mean(closing_consumption_level_PIH[y-1,]) # if the first week, retrieve the consumption average from the closing consumption matrix
           
           for (i in 1:n_households){
             #PIH
@@ -307,7 +310,7 @@ All_simulation = function(deterministic_income,
           }
         } else {
           
-          consumption_average = mean(consumption_mat_All_asymmetric[j-1,])
+          consumption_average = mean(deterministic_income_All_asymmetry[j-1,])
           
           for (i in 1:n_households){
             #PIH
@@ -339,6 +342,7 @@ All_simulation = function(deterministic_income,
         }
         annual_asset_level_All_asymmetry[y+1,] = savings_All_asymmetry[j+1,] #Save the closing asset levels
         closing_consumption_level[y,] = consumption_mat_All_asymmetric[j,] #Save the average consumption to use for the next year timestep. 
+        closing_consumption_level_PIH[y,] = deterministic_income_All_asymmetry[j,] #Save the average consumption to use for the next year timestep. 
       }
     } 
   } 
