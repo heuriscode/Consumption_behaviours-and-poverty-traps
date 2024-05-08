@@ -30,7 +30,7 @@ source(here("utilities","getplmfitted.R"))  #manual predicted and residuals seri
 source(here("utilities","get_outmat_ROT_08_12_20.R"))
 source(here("utilities","get_outmat_HABIT_08_12_20.R"))
 source(here("utilities","get_outmat_JONES_08_12_20.R"))
-source(here("utilities","expected_income_linear_low.R"))
+source(here("utilities","expected_income_linear_high.R"))
 
 ############################################
 #NOTES :
@@ -410,18 +410,18 @@ pdat=pdata.frame(dat,index=c("ID","WEEK"))
 
 ### Note2: These are implemented as different main scripts - see main folder and run these separately.
 
-res_high = get_linear_high()
+res = get_linear_high()
 
 ## Create different pdata frames for each of the different expected income models
 pdat=pdata.frame(data.frame(
-    dat,"EXPECTED_INC"=res_low$EXPECT_INC,
-    "UNEXPECTED_INC"=res_low$RESID_INC,
-    "POS_EXPINC"=res_low$NEG_EXPINC,
-    "POS_UNEXPINC"=res_low$NEG_UNEXPINC,
-    "POS_EXPINC"=res_low$POS_EXPINC,
-    "POS_UNEXPINC"=res_low$POS_UNEXPINC,
-    "dPOS_EXPINC"=res_low$dPOS_EXPINC,
-    "dPOS_UNEXPINC"=res_low$dPOS_UNEXPINC
+    dat,"EXPECTED_INC"=res$EXPECT_INC,
+    "UNEXPECTED_INC"=res$RESID_INC,
+    "POS_EXPINC"=res$NEG_EXPINC,
+    "POS_UNEXPINC"=res$NEG_UNEXPINC,
+    "POS_EXPINC"=res$POS_EXPINC,
+    "POS_UNEXPINC"=res$POS_UNEXPINC,
+    "dPOS_EXPINC"=res$dPOS_EXPINC,
+    "dPOS_UNEXPINC"=res$dPOS_UNEXPINC
     ),
     index=c("ID","WEEK")
 )

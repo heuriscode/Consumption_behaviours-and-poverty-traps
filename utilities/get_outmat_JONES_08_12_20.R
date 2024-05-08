@@ -10,76 +10,44 @@ rownames(outmat)=c("difference from Mean Parish Consumption)","Std. Error",
                    "", #gap
                    "R-squared","Number households","Number time periods (used)","Total used observations",
                    "Durbin-Watson (DW) Statistic","Baltagi-Wu LBI statistic","Barghava et al Durbin Watson Statistic")
-colnames(outmat)=c("CONSUMPTION","CONSUMPTION","DISCRETIONARY CONSUMPTION","DISCRETIONARY CONSUMPTION")
+colnames(outmat)=c("CONSUMPTION","CONSUMPTION","DISCRETIONARY CONSUMPTION","DISCRETIONARY CONSUMPTION","FLEXIBLE CONSUMPTION","FLEXIBLE CONSUMPTION")
 
-#number of HH
-outmat[10,]=c(ncol(model_list[[1]]$indcoef),ncol(model_list[[2]]$indcoef),ncol(model_list[[3]]$indcoef),ncol(model_list[[4]]$indcoef))
-#total # of observations
-outmat[12,]=c(length(model_list[[1]]$fitted.values),length(model_list[[2]]$fitted.values),length(model_list[[3]]$fitted.values),length(model_list[[4]]$fitted.values))
 
-#M5 - jones asymmetric CONS
-tab=round(summary(model_list[[1]])$CoefTable,3)
-if(intercept==FALSE){
-  tab=rbind(rep(NA,ncol(tab)),tab)
+for(mmm in 1:length(model_list)){
+
+  #get coefficients
+  tab=round(summary(model_list[[mmm]])$CoefTable,3)
+
+  #include intercept or not?
+  if(intercept==FALSE){
+    tab=rbind(rep(NA,ncol(tab)),tab)
+    }
+  
+  #fill coefficients
+  for(rrr in 1:2){
+    outmat[((rrr-1)*2+1),mmm]=paste(tab[((rrr-1)*2+2),1],ifelse(tab[((rrr-1)*2+2),4]>0.1,"",ifelse(tab[((rrr-1)*2+2),4]>0.05,"*",ifelse(tab[((rrr-1)*2+2),4]>0.01,"**","***"))),sep="")
+    outmat[((rrr-1)*2+2),mmm]=tab[2,2]
   }
-outmat[1,1]=paste(tab[2,1],ifelse(tab[2,4]>0.1,"",ifelse(tab[2,4]>0.05,"*",ifelse(tab[2,4]>0.01,"**","***"))),sep="")
-outmat[2,1]=tab[2,2]
-outmat[3,1]=paste(tab[3,1],ifelse(tab[3,4]>0.1,"",ifelse(tab[3,4]>0.05,"*",ifelse(tab[3,4]>0.01,"**","***"))),sep="")
-outmat[4,1]=tab[3,2]
-outmat[6:7,1]=c("No","No")
-outmat[9,1]=round(summary(model_list[[1]])$rsqr,2)
-outmat[11,1]=20
-outmat[13,1]= round(pbnftest(model_list[[1]])$statistic,2)
-outmat[14,1]= round(pbnftest(model_list[[1]],test="lbi")$statistic,2)
-outmat[15,1]= round(pbnftest(model_list[[1]],test="bnf")$statistic,2)
 
-#M5 - jones asymmetric DISCRETIONARY CONS
-tab=round(summary(model_list[[2]])$CoefTable,3)
-if(intercept==FALSE){
-  tab=rbind(rep(NA,ncol(tab)),tab)
+  #Add comments on model type (i.e. including the other behavioural functions or not):
+  if((mmm %% 2) == 0) {
+    outmat[6:7,mmm] = c("Yes","Yes")
+  } else {
+    outmat[6:7,mmm] = c("No","No")
   }
-outmat[1,2]=paste(tab[2,1],ifelse(tab[2,4]>0.1,"",ifelse(tab[2,4]>0.05,"*",ifelse(tab[2,4]>0.01,"**","***"))),sep="")
-outmat[2,2]=tab[2,2]
-outmat[3,2]=paste(tab[3,1],ifelse(tab[3,4]>0.1,"",ifelse(tab[3,4]>0.05,"*",ifelse(tab[3,4]>0.01,"**","***"))),sep="")
-outmat[4,2]=tab[3,2]
-outmat[6:7,2]=c("No","No")
-outmat[9,2]=round(summary(model_list[[2]])$rsqr,2)
-outmat[11,2]=20
-outmat[13,2]= round(pbnftest(model_list[[2]])$statistic,2)
-outmat[14,2]= round(pbnftest(model_list[[2]],test="lbi")$statistic,2)
-outmat[15,2]= round(pbnftest(model_list[[2]],test="bnf")$statistic,2)
 
-#M8 - rot asymmetric with habits and jones CONS
-tab=round(summary(model_list[[3]])$CoefTable,3)
-if(intercept==FALSE){
-  tab=rbind(rep(NA,ncol(tab)),tab)
-  }
-outmat[1,3]=paste(tab[2,1],ifelse(tab[2,4]>0.1,"",ifelse(tab[2,4]>0.05,"*",ifelse(tab[2,4]>0.01,"**","***"))),sep="")
-outmat[2,3]=tab[2,2]
-outmat[3,3]=paste(tab[3,1],ifelse(tab[3,4]>0.1,"",ifelse(tab[3,4]>0.05,"*",ifelse(tab[3,4]>0.01,"**","***"))),sep="")
-outmat[4,3]=tab[3,2]
-outmat[6:7,3]=c("Yes","Yes")
-outmat[9,3]=round(summary(model_list[[3]])$rsqr,2)
-outmat[11,3]=20
-outmat[13,3]= round(pbnftest(model_list[[3]])$statistic,2)
-outmat[14,3]= round(pbnftest(model_list[[3]],test="lbi")$statistic,2)
-outmat[15,3]= round(pbnftest(model_list[[3]],test="bnf")$statistic,2)
+  #basic model statistics (r-squared, num hh, num time periods, total obs)
+  outmat[9,mmm]=c(round(summary(model_list[[mmm]])$rsqr,2))
+  outmat[10,mmm]=dim(model_list[[mmm]]$indcoef)[2],                                     #num households
+  outmat[11,mmm]=length(model_list[[mmm]]$fitted.values)/(dim(model_list[[mmm]]$indcoef)[2]),  #time periods used
+  outmat[12,mmm]=length(model_list[[mmm]]$fitted.values),
+  
+  #DW and other test statistics
+  outmat[13,mmm]= round(pbnftest(model_list[[mmm]])$statistic,2)
+  outmat[14,mmm]= round(pbnftest(model_list[[mmm]],test="lbi")$statistic,2)
+  outmat[15,mmm]= round(pbnftest(model_list[[mmm]],test="bnf")$statistic,2)
 
-#M8 - rot asymmetric with habits and jones DISCRETIONARY CONS
-tab=round(summary(model_list[[4]])$CoefTable,3)
-if(intercept==FALSE){
-  tab=rbind(rep(NA,ncol(tab)),tab)
-  }
-outmat[1,4]=paste(tab[2,1],ifelse(tab[2,4]>0.1,"",ifelse(tab[2,4]>0.05,"*",ifelse(tab[2,4]>0.01,"**","***"))),sep="")
-outmat[2,4]=tab[2,2]
-outmat[3,4]=paste(tab[3,1],ifelse(tab[3,4]>0.1,"",ifelse(tab[3,4]>0.05,"*",ifelse(tab[3,4]>0.01,"**","***"))),sep="")
-outmat[4,4]=tab[3,2]
-outmat[6:7,4]=c("Yes","Yes")
-outmat[9,4]=round(summary(model_list[[4]])$rsqr,2)
-outmat[11,4]=20
-outmat[13,4]= round(pbnftest(model_list[[4]])$statistic,2)
-outmat[14,4]= round(pbnftest(model_list[[4]],test="lbi")$statistic,2)
-outmat[15,4]= round(pbnftest(model_list[[4]],test="bnf")$statistic,2)
+}
 
 return(outmat)
 }

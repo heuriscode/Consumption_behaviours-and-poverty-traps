@@ -1,0 +1,20 @@
+"CONSUMPTION","CONSUMPTION","DISCRETIONARY CONSUMPTION","DISCRETIONARY CONSUMPTION"
+"diff Exp. Income","0.402***","0.203***","0.247***","0.159**"
+"Std. Error","0.061","0.048","0.08","0.073"
+"diff Exp. Income (+ve values)","0.021","0.098","0.102","0.038"
+"Std. Error","0.098","0.083","0.13","0.128"
+"diff Unexpected Income","0.329***","0.209***","0.291***","0.18***"
+"Std. Error","0.052","0.037","0.059","0.059"
+"diff Unexpected Income (+ve values)","0.051","0.128*","0.04","0.109"
+"Std. Error","0.077","0.067","0.1","0.105"
+"",NA,NA,NA,NA
+"Include controls for Habits?","No","No","Yes","Yes"
+"Include controls for 'Keeping Up'?","No","No","Yes","Yes"
+"",NA,NA,NA,NA
+"R-squared","0.75","0.77","0.44","0.77"
+"Number households","421","421","421","421"
+"Number time periods (used)","21","21","21","21"
+"Total used observations","7999","8841","8841","1.93"
+"Durbin-Watson (DW) Statistic","2.32","1.95","2.42",NA
+"Baltagi-Wu LBI statistic","2.4","2.04","2.53","2.04"
+"Barghava et al Durbin Watson Statistic","2.32","1.95","2.42","1.93"
