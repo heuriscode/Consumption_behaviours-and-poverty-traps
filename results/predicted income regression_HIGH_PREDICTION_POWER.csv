@@ -1,0 +1,20 @@
+"Estimate","Standard Error","P-value"
+"Intercept",6.699,0.454,0
+"L1(Income)",-0.242,0.018,0
+"L2(Income)",-0.243,0.016,0
+"L1(Consumption)",0.034,0.021,0.102
+"L2(Consumption)",0.017,0.02,0.383
+"L1(Parish mean consumption)",0.099,0.064,0.121
+"L2(Parish mean consumption)",-0.138,0.058,0.017
+"Week",-28.409,3.238,0
+"Week^2",38.737,3.844,0
+"Week^3",-5.06,3.616,0.162
+"Week^4",-7.757,2.929,0.008
+"",NA,NA,NA
+"R-squared",0.633680881172546,NA,NA
+"# households",9262,NA,NA
+"Time periods used",22,NA,NA
+"Total # observations",421,NA,NA
+"DW statistic",2.21,NA,NA
+"Barghava et al Durbin Watson Statistic",2.21,NA,NA
+"Baltagi-Wu LBI statistic",2.25,NA,NA

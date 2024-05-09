@@ -1,0 +1,16 @@
+"CONSUMPTION","CONSUMPTION","DISCRETIONARY CONSUMPTION","DISCRETIONARY CONSUMPTION","FLEXIBLE CONSUMPTION","FLEXIBLE CONSUMPTION"
+"difference from Mean Parish Consumption)","0.683***","0.553***","0.848***","0.798***","0.834***","0.768***"
+"Std. Error","0.032","0.038","0.017","0.02","0.017","0.019"
+"difference from Mean Parish Consumption) (+ve values)","0.163***","0.022","0.144***","0.023","0.159***","0.019"
+"Std. Error","0.032","0.038","0.017","0.02","0.017","0.019"
+"",NA,NA,NA,NA,NA,NA
+"Include controls for RoT?","No","Yes","No","Yes","No","Yes"
+"Include controls for Habits?","No","Yes","No","Yes","No","Yes"
+"",NA,NA,NA,NA,NA,NA
+"R-squared","0.57","0.72","0.59","0.72","0.59","0.71"
+"Number households","421","421","421","421","421","421"
+"Number time periods (used)","21","21","21","21","21","21"
+"Total used observations","8841","8841","8841","8841","8841","8841"
+"Durbin-Watson (DW) Statistic","2","1.99","1.99","1.98","1.98","1.97"
+"Baltagi-Wu LBI statistic","2.08","2.08","2.09","2.08","2.08","2.06"
+"Barghava et al Durbin Watson Statistic","2","1.99","1.99","1.98","1.98","1.97"

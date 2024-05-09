@@ -481,6 +481,8 @@ LBI_U=round(pbnftest(reg_persistenceUNEXPINC,test="lbi")$statistic,2)
 
 
 modlist=list(reg_persistenceINC,reg_persistenceEXPINC,reg_persistenceUNEXPINC)
+
+# Create the output matrix including model test statistics, r-squared, etc.
 modelstatmat=cbind(
   c(
       summary(modlist[[1]])$rsqr,                                         #rsqr
@@ -511,6 +513,7 @@ modelstatmat=cbind(
     ) 
 )
 
+#P-value stars and coefficient formatting
 for(rrr in 1:5){
   for(ccc in 1:length(modlist)){
     mod=summary(modlist[[ccc]])$Coef
@@ -519,15 +522,20 @@ for(rrr in 1:5){
   }
 }
 
+#Final formatting/creation of output table for income shock persistence
 persist_mat[7:13,1]=modelstatmat[,1]
 persist_mat[7:13,2]=modelstatmat[,2]
 persist_mat[7:13,3]=modelstatmat[,3]
 
+#Write to results folder
 write.table(persist_mat,"results\\income persistence results_MAIN.csv",sep=",")
 
 ################################
 #CAUSALITY CHECK:
 ################################
+# This section estimates the reverse causality check
+#    that seeks to ensure that consumption does not granger
+#    cause income. 
 
 reg_causalityUC=pmg(diff(UNEXPECTED_INC)~lag(diff(CONS),1)+
                       lag(diff(EXPECTED_INC),1)+
@@ -555,7 +563,14 @@ for(i in 1:5){
   caus_mat[i,]=c(est,stderr)
 }
 
-caus_mat[-1:-6,1]=c(0.5,421,20,8460,DWstat,BNF,LBI)
+caus_mat[-1:-6,1]=c(
+      summary(reg_causalityUC)$rsqr,                                         #rsqr
+      (dim(reg_causalityUC$indcoef)[2]),                                     #num households
+      length(reg_causalityUC$fitted.values)/(dim(reg_causalityUC$indcoef)[2]),  #time periods used
+      length(reg_causalityUC$fitted.values),
+      DWstat,
+      BNF,
+      LBI)
 
 rownames(caus_mat)=c("Intercept","Lag(diff(Consumption))","Lag(diff(Expected Income))","Lag(diff(Unexpected Income))","Lag(diff(Mean Parish Income))",
                      "","R squared","# households","Time periods used","Total # observations",
@@ -568,43 +583,14 @@ write.table(caus_mat,"results\\causality results_MAIN.csv",sep=",")
 # MAIN regressions TOTAL CONSUMPTION
 ##################################################
 
-#ROT:
-#PIH predicts consumption = expected income
-#PIH predicts saving of a large portion of unexpected income (spreading across time)
-#So H0 is that the unexpected income coefficients are = 0.
-#If positive then significant ROT effects.
-eq_rot_asym_CONS=diff(CONS)~0+diff(EXPECTED_INC)+dPOS_EXPINC+diff(UNEXPECTED_INC)+dPOS_UNEXPINC + lag(diff(EXPECTED_INC)) + lead(diff(EXPECTED_INC))
-eq_rot_habit_jones_asym_CONS=diff(CONS)~0+diff(EXPECTED_INC)+dPOS_EXPINC+diff(UNEXPECTED_INC)+dPOS_UNEXPINC+lag(DIFF_PARISH_CONS)+lag(diff(CONS),1)
-eq_rot_asym_DISC_CONS=diff(DISC)~0+diff(EXPECTED_INC)+dPOS_EXPINC+diff(UNEXPECTED_INC)+dPOS_UNEXPINC
-eq_rot_habit_jones_asym_DISC_CONS=diff(DISC)~0+diff(EXPECTED_INC)+dPOS_EXPINC+diff(UNEXPECTED_INC)+dPOS_UNEXPINC+lag(DIFF_PARISH_DISC)+lag(diff(DISC),1)
-
-#HABITS:
-#lagged consumption changes are sought to be maintained (habits)
-#H0 is for PIH - that lagged consumption changes have no effect on current consumption shocks
-# Rho between -1 and above 0 indicates habit formation.
-eq_habit_asym_CONS=diff(CONS)~0+lag(diff(CONS),1)+lag(dCONSPOS,1)+diff(EXPECTED_INC)
-eq_habit_rot_jones_asym_CONS=diff(CONS)~0+lag(diff(CONS),1)+lag(dCONSPOS,1)+lag(DIFF_PARISH_CONS)+diff(EXPECTED_INC)+diff(UNEXPECTED_INC)
-eq_habit_asym_DISC_CONS=diff(DISC)~0+lag(diff(DISC),1)+lag(dDISCPOS,1)+diff(EXPECTED_INC)
-eq_habit_rot_jones_asym_DISC_CONS=diff(DISC)~0+lag(diff(DISC),1)+lag(dDISCPOS,1)+lag(DIFF_PARISH_DISC)+diff(EXPECTED_INC)+diff(UNEXPECTED_INC)
-
-#KEEPING UP WITH THE JONESES:
-#Differences between own consumption and parish mean consumption are sought to be reduced
-#H0 is that housholds maximise a purely inward looking utility function that is not dependent on parish level consumption
-#So H0 is that parish level differences from own consumption are not significant
-#positive coefficients indicate a significant Keeping Up effect.
-eq_jones_asym_CONS=diff(CONS)~0+lag(DIFF_PARISH_CONS,1)+lag(DIFF_PARISH_CONS_POS,1)+diff(EXPECTED_INC)
-eq_jones_rot_habit_asym_CONS=diff(CONS)~0+lag(DIFF_PARISH_CONS,1)+lag(DIFF_PARISH_CONS_POS,1)+lag(diff(CONS),1)+diff(EXPECTED_INC)+diff(UNEXPECTED_INC)
-eq_jones_asym_DISC_CONS=diff(DISC)~0+lag(DIFF_PARISH_DISC)+lag(DIFF_PARISH_DISC_POS)+diff(EXPECTED_INC)
-eq_jones_rot_habit_asym_DISC_CONS=diff(DISC)~0+lag(DIFF_PARISH_CONS)+lag(DIFF_PARISH_CONS_POS)+lag(diff(DISC),1)+diff(EXPECTED_INC)+diff(UNEXPECTED_INC)
-
 #estimate models
 source(here("utilities","estimateModels.R"))
 estimated_models = estimateModels(reg_df=pdat)
 
-rotlist = estimated_models$rotlist
-habitlist = estimated_models$habitlist
-joneslist = estimated_models$joneslist
-joneslist = estimated_models$joneslist
+rotlist = estimated_models$rotList
+habitlist = estimated_models$habitList
+joneslist = estimated_models$jonesList
+
 
 ###############################
 #   generate main results
