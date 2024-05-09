@@ -587,9 +587,9 @@ write.table(caus_mat,"results\\causality results_MAIN.csv",sep=",")
 source(here("utilities","estimateModels.R"))
 estimated_models = estimateModels(reg_df=pdat)
 
-rotlist = estimated_models$rotlist
-habitlist = estimated_models$habitlist
-joneslist = estimated_models$joneslist
+rotlist = estimated_models$rotList
+habitlist = estimated_models$habitList
+joneslist = estimated_models$jonesList
 
 
 ###############################

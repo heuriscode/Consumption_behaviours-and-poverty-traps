@@ -2,7 +2,7 @@ get_outmat_JONES=function(model_list,intercept=FALSE){
 
 
 #ROT
-outmat=matrix(NA,nrow=15,ncol=4)
+outmat=matrix(NA,nrow=15,ncol=6)
 rownames(outmat)=c("difference from Mean Parish Consumption)","Std. Error",
                    "difference from Mean Parish Consumption) (+ve values)","Std. Error",
                    "", #gap
