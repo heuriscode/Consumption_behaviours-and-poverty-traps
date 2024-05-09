@@ -38,9 +38,9 @@ for(mmm in 1:length(model_list)){
 
   #basic model statistics (r-squared, num hh, num time periods, total obs)
   outmat[9,mmm]=c(round(summary(model_list[[mmm]])$rsqr,2))
-  outmat[10,mmm]=dim(model_list[[mmm]]$indcoef)[2],                                     #num households
-  outmat[11,mmm]=length(model_list[[mmm]]$fitted.values)/(dim(model_list[[mmm]]$indcoef)[2]),  #time periods used
-  outmat[12,mmm]=length(model_list[[mmm]]$fitted.values),
+  outmat[10,mmm]=dim(model_list[[mmm]]$indcoef)[2]                                     #num households
+  outmat[11,mmm]=length(model_list[[mmm]]$fitted.values)/(dim(model_list[[mmm]]$indcoef)[2])  #time periods used
+  outmat[12,mmm]=length(model_list[[mmm]]$fitted.values)
   
   #DW and other test statistics
   outmat[13,mmm]= round(pbnftest(model_list[[mmm]])$statistic,2)

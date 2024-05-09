@@ -5,10 +5,10 @@
 "Lag(diff(Unexpected Income))","-0.45***","(0.01)"
 "Lag(diff(Mean Parish Income))","-0.05","(0.06)"
 "",NA,NA
-"R squared","0.5",NA
+"R squared","0.49929109860527",NA
 "# households","421",NA
 "Time periods used","20",NA
-"Total # observations","8460",NA
+"Total # observations","8420",NA
 "DW-statistic","2.03",NA
 "Baltagi-Wu LBI statistic","2.03",NA
 "Barghava et al Durbin Watson Statistic","2.13",NA

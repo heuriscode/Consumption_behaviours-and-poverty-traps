@@ -12,7 +12,7 @@ rownames(outmat)=c("diff Exp. Income","Std. Error",
                        "", #gap
                        "R-squared","Number households","Number time periods (used)","Total used observations",
                        "Durbin-Watson (DW) Statistic","Baltagi-Wu LBI statistic","Barghava et al Durbin Watson Statistic")
-colnames(outmat)=c("CONSUMPTION","CONSUMPTION","DISCRETIONARY CONSUMPTION","DISCRETIONARY CONSUMPTION"."FLEXIBLE CONSUMPTION","FLEXIBLE CONSUMPTION")
+colnames(outmat)=c("CONSUMPTION","CONSUMPTION","DISCRETIONARY CONSUMPTION","DISCRETIONARY CONSUMPTION","FLEXIBLE CONSUMPTION","FLEXIBLE CONSUMPTION")
 
 ## Loop through models in model_list and fill coefficient table
 
@@ -41,9 +41,9 @@ for(mmm in 1:length(model_list)){
 
   #basic model statistics (r-squared, num hh, num time periods, total obs)
   outmat[13,mmm]=c(round(summary(model_list[[mmm]])$rsqr,2))
-  outmat[14,mmm]=dim(model_list[[mmm]]$indcoef)[2],                                     #num households
-  outmat[15,mmm]=length(model_list[[mmm]]$fitted.values)/(dim(model_list[[mmm]]$indcoef)[2]),  #time periods used
-  outmat[16,mmm]=length(model_list[[mmm]]$fitted.values),
+  outmat[14,mmm]=dim(model_list[[mmm]]$indcoef)[2]                                   #num households
+  outmat[15,mmm]=length(model_list[[mmm]]$fitted.values)/(dim(model_list[[mmm]]$indcoef)[2])  #time periods used
+  outmat[16,mmm]=length(model_list[[mmm]]$fitted.values)
   
   #DW and other test statistics
   outmat[17,mmm]= round(pbnftest(model_list[[mmm]])$statistic,2)
