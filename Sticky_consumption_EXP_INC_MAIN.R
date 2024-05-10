@@ -604,15 +604,15 @@ joneslist = estimated_models$jonesList
 
 #ROT
 source("utilities\\get_outmat_ROT_08_12_20.R")
-outmat_rot=get_outmat_ROT(rotlist,intercept=FALSE)
+outmat_rot=get_outmat_ROT(rotlist)
 
 #HABITS
 source("utilities\\get_outmat_HABIT_08_12_20.R")
-outmat_habit=get_outmat_HABIT(habitlist,intercept=FALSE)
+outmat_habit=get_outmat_HABIT(habitlist)
 
 #JONES
 source("utilities\\get_outmat_JONES_08_12_20.R")
-outmat_jones=get_outmat_JONES(joneslist,intercept=FALSE)
+outmat_jones=get_outmat_JONES(joneslist)
 
 #write tables
 write.table(outmat_rot,"results\\RoT results full sample_MAIN.csv",sep=",",row.names=TRUE)

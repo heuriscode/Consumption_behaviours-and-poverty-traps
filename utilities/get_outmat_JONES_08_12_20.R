@@ -1,4 +1,4 @@
-get_outmat_JONES=function(model_list,intercept=FALSE){
+get_outmat_JONES=function(model_list){
 
 
 #ROT
@@ -18,15 +18,13 @@ for(mmm in 1:length(model_list)){
   #get coefficients
   tab=round(summary(model_list[[mmm]])$CoefTable,3)
 
-  #include intercept or not?
-  if(intercept==FALSE){
-    tab=rbind(rep(NA,ncol(tab)),tab)
-    }
-  
   #fill coefficients
   for(rrr in 1:2){
-    outmat[((rrr-1)*2+1),mmm]=paste(tab[((rrr-1)*2+2),1],ifelse(tab[((rrr-1)*2+2),4]>0.1,"",ifelse(tab[((rrr-1)*2+2),4]>0.05,"*",ifelse(tab[((rrr-1)*2+2),4]>0.01,"**","***"))),sep="")
-    outmat[((rrr-1)*2+2),mmm]=tab[2,2]
+   coefest = tab[rrr,1]
+    pval = tab[rrr,4]
+    stderr = tab[rrr,2]
+    outmat[((rrr-1)*2+1),mmm] = paste(coefest,ifelse(pval>0.1,"",ifelse(pval>0.05,"*",ifelse(pval>0.01,"**","***"))),sep="")
+    outmat[((rrr-1)*2+2),mmm] = stderr
   }
 
   #Add comments on model type (i.e. including the other behavioural functions or not):

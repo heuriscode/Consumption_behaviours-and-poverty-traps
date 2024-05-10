@@ -527,7 +527,7 @@ persist_mat[7:13,2]=modelstatmat[,2]
 persist_mat[7:13,3]=modelstatmat[,3]
 
 #Write to results folder
-write.table(persist_mat,"results\\income persistence results_MAIN.csv",sep=",")
+write.table(persist_mat,"results\\income persistence results_HIGH.csv",sep=",")
 
 ################################
 #CAUSALITY CHECK:
@@ -576,7 +576,7 @@ rownames(caus_mat)=c("Intercept","Lag(diff(Consumption))","Lag(diff(Expected Inc
                      "DW-statistic","Baltagi-Wu LBI statistic","Barghava et al Durbin Watson Statistic")
 colnames(caus_mat)=c("Estimate","Standard Error")
 
-write.table(caus_mat,"results\\causality results_MAIN.csv",sep=",")
+write.table(caus_mat,"results\\causality results_HIGH.csv",sep=",")
 
 ##################################################
 # MAIN regressions TOTAL CONSUMPTION
@@ -603,20 +603,20 @@ joneslist = estimated_models$jonesList
 
 #ROT
 source("utilities\\get_outmat_ROT_08_12_20.R")
-outmat_rot=get_outmat_ROT(rotlist,intercept=FALSE)
+outmat_rot=get_outmat_ROT(rotlist)
 
 #HABITS
 source("utilities\\get_outmat_HABIT_08_12_20.R")
-outmat_habit=get_outmat_HABIT(habitlist,intercept=FALSE)
+outmat_habit=get_outmat_HABIT(habitlist)
 
 #JONES
 source("utilities\\get_outmat_JONES_08_12_20.R")
-outmat_jones=get_outmat_JONES(joneslist,intercept=FALSE)
+outmat_jones=get_outmat_JONES(joneslist)
 
 #write tables
-write.table(outmat_rot,"results\\RoT results full sample_MAIN.csv",sep=",",row.names=TRUE)
-write.table(outmat_habit,"results\\Habits results full sample_MAIN.csv",sep=",",row.names=TRUE)
-write.table(outmat_jones,"results\\Jones results full sample_MAIN.csv",sep=",",row.names=TRUE)
+write.table(outmat_rot,"results\\RoT results full sample_HIGH.csv",sep=",",row.names=TRUE)
+write.table(outmat_habit,"results\\Habits results full sample_HIGH.csv",sep=",",row.names=TRUE)
+write.table(outmat_jones,"results\\Jones results full sample_HIGH.csv",sep=",",row.names=TRUE)
 
 ###############################
 #   Simulations
