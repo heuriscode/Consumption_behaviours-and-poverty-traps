@@ -541,7 +541,7 @@ reg_causalityUC=pmg(diff(UNEXPECTED_INC)~lag(diff(CONS),1)+
                       lag(diff(EXPECTED_INC),1)+
                       lag(diff(UNEXPECTED_INC),1)+
                       lag(diff(PARISH_INC),1),
-                    data=pdat,model="cmg")
+                      data=pdat,model="cmg")
 
 #R-squared = 0.53
 #n=423
@@ -624,7 +624,7 @@ write.table(outmat_jones,"results\\Jones results full sample_MAIN.csv",sep=",",r
 ###############################
 
 #In this section, we use the coefficients in the estimation to demonstrate dynamics in income, consumption and asset accumulation. 
-
+# Uncomment to run these functions. 
 source("utilities\\runSimulations.R")
 simulation_list = runSimulations(bg_data, data, rotlist, joneslist, pdat$UNEXPECTED_INC)
 

@@ -625,7 +625,7 @@ write.table(outmat_jones,"results\\Jones results full sample_LOW.csv",sep=",",ro
 #In this section, we use the coefficients in the estimation to demonstrate dynamics in income, consumption and asset accumulation. 
 
 #source("utilities\\runSimulations.R")
-#simulation_list = runSimulations(bg_data, data, rotlist, joneslist, RESID_INC)
+#simulation_list = runSimulations(bg_data, data, rotlist, joneslist, pdat$UNEXPECTED_INC)
 
 # END of SCRIPT
 

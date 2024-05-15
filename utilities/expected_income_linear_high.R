@@ -1,7 +1,7 @@
 get_linear_high = function(){
 
 
-    eq_exp_inc=INC~lag(INC,1:2)+lag(CONS,1:2)+lag(PARISH_CONS,1:2)+poly(WEEK,4)
+    eq_exp_inc=INC~lag(INC,1:2)+lag(CONS,1:2)+lag(PARISH_CONS,1:2)+poly(as.numeric(WEEK),4)
     k=11 #ensure this is equal to target coefficients length
 
     #use the mg, NOT the ccemg model as common correlated effects are unknown to households before occurence

@@ -1,7 +1,7 @@
 get_linear_low = function(){
 
 
-    eq_exp_inc=INC~lag(INC,1:2)+lag(CONS,1:2)+poly(WEEK, 2)
+    eq_exp_inc=INC~lag(INC,1:2)+lag(CONS,1:2)+poly(as.numeric(WEEK), 2)
     k=7
 
     #use the mg, NOT the ccemg model as common correlated effects are unknown to households before occurence
