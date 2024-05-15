@@ -1,7 +1,7 @@
 get_linear_middle = function(){
 
 
-    eq_exp_inc=INC~lag(INC,1:2)+lag(CONS,1:2)+lag(PARISH_CONS,1:2)+poly(WEEK,2)
+    eq_exp_inc=INC~lag(INC,1:2)+lag(CONS,1:2)+lag(PARISH_CONS,1:2)+poly(as.numeric(WEEK),2)
     k=9 #ensure this is equal to target coefficients length
 
     #use the mg, NOT the ccemg model as common correlated effects are unknown to households before occurence

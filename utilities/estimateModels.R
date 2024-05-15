@@ -8,7 +8,7 @@ estimateModels = function(reg_df){
     #So H0 is that the unexpected income coefficients are = 0.
     #If positive then significant ROT effects.
     eqRotList = list(
-        eq_rot_asym_CONS=diff(CONS)~0+diff(EXPECTED_INC)+dPOS_EXPINC+diff(UNEXPECTED_INC)+dPOS_UNEXPINC + lag(diff(EXPECTED_INC)) + lead(diff(EXPECTED_INC)),
+        eq_rot_asym_CONS=diff(CONS)~0+diff(EXPECTED_INC)+dPOS_EXPINC+diff(UNEXPECTED_INC)+dPOS_UNEXPINC,
         eq_rot_habit_jones_asym_CONS=diff(CONS)~0+diff(EXPECTED_INC)+dPOS_EXPINC+diff(UNEXPECTED_INC)+dPOS_UNEXPINC+lag(DIFF_PARISH_CONS)+lag(diff(CONS),1),
         eq_rot_asym_DISC_CONS=diff(DISC)~0+diff(EXPECTED_INC)+dPOS_EXPINC+diff(UNEXPECTED_INC)+dPOS_UNEXPINC,
         eq_rot_habit_jones_asym_DISC_CONS=diff(DISC)~0+diff(EXPECTED_INC)+dPOS_EXPINC+diff(UNEXPECTED_INC)+dPOS_UNEXPINC+lag(DIFF_PARISH_FLEX)+lag(diff(DISC),1),
@@ -17,8 +17,8 @@ estimateModels = function(reg_df){
     )
 
     #HABITS:
-    #lagged consumption changes are sought to be maintained (habits)
-    #H0 is for PIH - that lagged consumption changes have no effect on current consumption shocks
+    # lagged consumption changes are sought to be maintained (habits)
+    # H0 is for PIH - that lagged consumption changes have no effect on current consumption shocks
     # Rho between -1 and above 0 indicates habit formation.
     eqHabitList = list(
         eq_habit_asym_CONS=diff(CONS)~0+lag(diff(CONS),1)+lag(dCONSPOS,1)+diff(EXPECTED_INC),
