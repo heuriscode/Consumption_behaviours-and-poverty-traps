@@ -43,15 +43,14 @@ source(here("utilities","expected_income_linear_middle.R"))
 ############################################
 #VAR NAMES IN DIARY DATA:
 #"SURVEY_ID"                   "WEEK_COUNT"
-#"PICKER_Y1"                   "DATE_FROM"
+#"DATE_FROM"
 #"DATE_TO"                     "WEEK"
 #"MONEY_EARNT_PICKING"         "MONEY_EARNT_COFF_SALES"
 #"MONEY_EARNT_PARCHMENT"       "MONEY_EARNT_OTHER_WORK"
 #"MONEY_EARNT_GOVT_NGO"        "MONEY_EARNT_PARTNER"
 #"MONEY_EARNT_FRIEND"          "MONEY_EARNT_SAVINGS"
 #"MONEY_EARNT_LOANS"           "GAMBLING"
-#"ASK_MONEY"                   "MONEY_FROM_ASK"
-#"MONEY_WENT_PARTNER"          "AMOUNT_WENT_PARTNER"
+#"MONEY_WENT_PARTNER"          
 #"MONEY_WENT_EXPENSES"         "MONEY_WENT_SAVINGS"
 #"MONEY_WENT_STOLEN"           "MONEY_WENT_FRIENDS"
 #"MONEY_WENT_LOAN"             "EXPENSES_FOOD"
@@ -160,8 +159,8 @@ missingobs=IDvec2[zeros>=4]
 bg_data=bg_data[-which(bg_data$ID %in% missingobs),]
 data=data[-which(data$SURVEY_ID %in% missingobs),]
 bg_data$VILLAGE=as.factor(droplevels(bg_data$VILLAGE))       #RESET VILLAGE LEVELS
-bg_data$PARISH=as.factor(droplevels(bg_data$PARISH))       #RESET VILLAGE LEVELS
-bg_data$SUBCOUNTY=as.factor(droplevels(bg_data$SUBCOUNTY))       #RESET  LEVELS
+bg_data$PARISH=as.factor(droplevels(bg_data$PARISH))    #RESET VILLAGE LEVELS
+bg_data$SUBCOUNTY=as.factor(droplevels(bg_data$SUBCOUNTY))      #RESET  LEVELS
 
 ## Also remove ID 8002 and 3412 as having no variation in parish level discretionary consumption
 data = data[-which(data$SURVEY_ID==8002 | data$SURVEY_ID==3412),]
